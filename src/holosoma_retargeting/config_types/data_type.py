@@ -246,6 +246,58 @@ JOINTS_MAPPINGS = {
         "LeftFoot": "Ankle_Cross_Left",
         "RightFoot": "Ankle_Cross_Right",
     },
+    ("lafan", "adam_sp"): {
+        "Spine1": "pelvis",
+        "LeftUpLeg": "thighLeft",
+        "RightUpLeg": "thighRight",
+        "LeftLeg": "shinLeft",
+        "RightLeg": "shinRight",
+        "LeftArm": "shoulderPitchLeft",
+        "RightArm": "shoulderPitchRight",
+        "LeftForeArm": "elbowLeft",
+        "RightForeArm": "elbowRight",
+        "LeftFoot": "toeLeft",
+        "RightFoot": "toeRight",
+        "LeftToeBase": "toeTipLeft",
+        "RightToeBase": "toeTipRight",
+        "LeftHand": "wristRollLeft",
+        "RightHand": "wristRollRight",
+    },
+    ("smplh", "adam_sp"): {
+        "Pelvis": "pelvis",
+        "Chest": "torso",
+        "L_Hip": "thighLeft",
+        "R_Hip": "thighRight",
+        "L_Knee": "shinLeft",
+        "R_Knee": "shinRight",
+        "L_Shoulder": "shoulderPitchLeft",
+        "R_Shoulder": "shoulderPitchRight",
+        "L_Elbow": "elbowLeft",
+        "R_Elbow": "elbowRight",
+        "L_Ankle": "toeLeft",
+        "R_Ankle": "toeRight",
+        "L_Toe": "toeTipLeft",
+        "R_Toe": "toeTipRight",
+        "L_Wrist": "wristRollLeft",
+        "R_Wrist": "wristRollRight",
+    },
+    ("mocap", "adam_sp"): {
+        "Spine1": "pelvis",
+        "LeftUpLeg": "thighLeft",
+        "LeftLeg": "shinLeft",
+        "RightUpLeg": "thighRight",
+        "RightLeg": "shinRight",
+        "LeftArm": "shoulderPitchLeft",
+        "LeftForeArm": "elbowLeft",
+        "LeftHandMiddle3": "wristRollLeft",
+        "RightArm": "shoulderPitchRight",
+        "RightForeArm": "elbowRight",
+        "RightHandMiddle3": "wristRollRight",
+        "LeftFoot": "toeLeft",
+        "RightFoot": "toeRight",
+        "LeftToeBase": "toeTipLeft",
+        "RightToeBase": "toeTipRight",
+    },
 }
 
 # Data format specific constants
@@ -283,7 +335,7 @@ class MotionDataConfig:
     """
 
     data_format: Literal["lafan", "smplh", "mocap"] = "smplh"
-    robot_type: Literal["g1", "t1"] = "g1"
+    robot_type: Literal["g1", "t1", "adam_sp"] = "g1"
 
     # Optional overrides - if None, will use defaults from data_format
     demo_joints: list[str] | None = None

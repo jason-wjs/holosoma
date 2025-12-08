@@ -24,7 +24,7 @@ class RetargetingConfig:
     """Type of retargeting task."""
 
     # --- top-level run knobs ---
-    robot: Literal["g1", "t1"] = "g1"
+    robot: Literal["g1", "t1", "adam_sp"] = "g1"
     """Robot type."""
 
     data_format: Literal["lafan", "smplh", "mocap"] | None = None

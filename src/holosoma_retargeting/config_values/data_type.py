@@ -11,7 +11,7 @@ from holosoma_retargeting.config_types.data_type import MotionDataConfig
 
 def get_default_motion_data_config(
     data_format: Literal["lafan", "smplh", "mocap"] = "smplh",
-    robot_type: Literal["g1", "t1"] = "g1",
+    robot_type: Literal["g1", "t1", "adam_sp"] = "g1",
 ) -> MotionDataConfig:
     """Get default motion data configuration.
 
