@@ -140,6 +140,10 @@ class RobotConfig:
                 "toeRight",
                 "toeTipLeft",
                 "toeTipRight",
+                "heelPadLeft",
+                "heelPadRight",
+                "midfootPadLeft",
+                "midfootPadRight",
             ]
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
