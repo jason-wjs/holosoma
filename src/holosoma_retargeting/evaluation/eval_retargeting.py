@@ -745,7 +745,7 @@ class Args:
     res_dir: Path
     data_dir: Path
     data_type: Literal["robot_object", "robot_only", "robot_terrain"] = "robot_object"
-    robot: Literal["g1", "t1","adam_sp"] = "g1"
+    robot: Literal["g1", "t1", "adam_sp"] = "g1"
     data_format: Literal["lafan", "smplh", "mocap"] | None = None
     object_name: str | None = None
     max_workers: int = 1

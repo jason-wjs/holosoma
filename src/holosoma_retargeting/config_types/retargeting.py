@@ -24,8 +24,7 @@ class RetargetingConfig:
     """Type of retargeting task."""
 
     # --- top-level run knobs ---
-    # TODO: Add your new robot type to this Literal type
-    robot: Literal["g1", "t1","adam_sp"] = "g1"  # Add new robot type here, e.g., Literal["g1", "t1", "new_robot"]
+    robot: Literal["g1", "t1", "adam_sp"] = "g1"
     """Robot type."""
 
     data_format: Literal["lafan", "smplh", "mocap"] | None = None

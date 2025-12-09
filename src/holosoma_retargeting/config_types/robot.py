@@ -18,16 +18,13 @@ class RobotDefaults(TypedDict):
 _ROBOT_DEFAULTS: dict[str, RobotDefaults] = {
     "g1": {"robot_dof": 29, "robot_height": 1.32, "object_name": "ground"},
     "t1": {"robot_dof": 23, "robot_height": 1.2, "object_name": "ground"},
-    # TODO: Add your new robot configuration here
-    # Example:
     "adam_sp": {"robot_dof": 29, "robot_height": 1.67, "object_name": "ground"},
-    # Replace "new_robot" with your robot type name, and fill in the actual values
 }
 
 
 @dataclass(frozen=True)
 class RobotConfig:
-    """Unified configuration for all robot constants (G1, T1) using tyro.
+    """Unified configuration for all robot constants (G1, T1, ADAM_SP) using tyro.
 
     Uses properties instead of __post_init__ - much simpler!
 
@@ -44,7 +41,7 @@ class RobotConfig:
     """
 
     # Robot type selector - determines which defaults to use
-    robot_type: Literal["g1", "t1","adam_sp"] = "g1"  
+    robot_type: Literal["g1", "t1", "adam_sp"] = "g1"
 
     # Robot configuration (optional overrides)
     robot_dof: int | None = None
@@ -143,15 +140,16 @@ class RobotConfig:
                 "left_foot_sphere_5_link",
                 "right_foot_sphere_5_link",
             ]
-        # TODO: Add foot sticking links for your new robot
-        # Example:
         if self.robot_type == "adam_sp":
             return [
-                "toeTipLeft",
-                "toeTipRight",
                 "toeLeft",
                 "toeRight",
-                # ... add all foot contact links from your URDF
+                "toeTipLeft",
+                "toeTipRight",
+                "heelPadLeft",
+                "heelPadRight",
+                "midfootPadLeft",
+                "midfootPadRight",
             ]
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
@@ -193,6 +191,40 @@ class RobotConfig:
                     -0.2,
                     0.0,
                     0.6,
+                    0.0,
+                    0.0,
+                    0.0,
+                ]
+            )
+        if self.robot_type == "adam_sp":
+            return np.array(
+                [
+                    -0.32,
+                    0.0,
+                    -0.18,
+                    0.66,
+                    -0.39,
+                    0.0,
+                    -0.32,
+                    0.0,
+                    0.18,
+                    0.66,
+                    -0.39,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.1,
+                    0.0,
+                    -0.3,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    -0.1,
+                    0.0,
+                    -0.3,
                     0.0,
                     0.0,
                     0.0,
@@ -272,10 +304,16 @@ class RobotConfig:
 
         if self.robot_type == "g1":
             return {"19": 0.2, "20": 0.2}  # waist yaw, waist roll
-        # TODO: Add manual cost weights for your new robot if needed
-        # Example:
-        # if self.robot_type == "new_robot":
-        #     return {"XX": weight, "YY": weight}  # joint index: cost weight
+        if self.robot_type == "adam_sp":
+            return {
+                "8": 1.0,  # hipRoll_Left
+                "9": 0.5,  # hipYaw_Left
+                "14": 1.0,  # hipRoll_Right
+                "15": 0.5,  # hipYaw_Right
+                "19": 0.5,  # waistRoll
+                "20": 0.5,  # waistPitch
+                "21": 0.5,  # waistYaw
+            }
         return {}
 
     MANUAL_COST = property(_manual_cost, doc="Get manual cost weights.")
@@ -289,12 +327,8 @@ class RobotConfig:
             return np.arange(19)
         if self.robot_type == "t1":
             return np.concatenate([np.arange(7), np.arange(11, 23)])
-        # TODO: Add nominal tracking indices for your new robot
-        # These are the joint indices that should track a nominal trajectory
-        # Example:
         if self.robot_type == "adam_sp":
-            return np.arange(19)
-        #     return np.arange(XX)  # or np.concatenate([np.arange(X), np.arange(Y, Z)])
+            return np.arange(29)  # All 29 joints for ADAM_SP
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
     NOMINAL_TRACKING_INDICES = property(

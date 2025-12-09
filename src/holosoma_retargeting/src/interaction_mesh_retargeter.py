@@ -140,7 +140,13 @@ class InteractionMeshRetargeter:
         # Create complete limits with floating base (-inf, inf) and actuated joint limits
         n_floating_base = 7
         joint_names = [self.robot_model.joint(i).name for i in range(self.robot_model.njnt)]
-        actuated_joints = [(i, name) for i, name in enumerate(joint_names) if name]  # Filter out None names
+
+        # Skip the free joint when building limits; its range entries are zeros and shift all other joints by one.
+        actuated_joints = [
+            (i, name)
+            for i, name in enumerate(joint_names)
+            if name and self.robot_model.jnt_type[i] != mujoco.mjtJoint.mjJNT_FREE
+        ]
 
         large_number = 1e6
         complete_lower_limits = np.concatenate(
@@ -588,12 +594,13 @@ class InteractionMeshRetargeter:
                 if left_key is None or right_key is None:
                     raise ValueError("foot_sticking must include one left* and one right* key")
 
-                for key, J_WF in J_WF_dict.items():
-                    apply_left = ("left" in key) and foot_sticking[left_key]
-                    apply_right = ("right" in key) and foot_sticking[right_key]
-                    if apply_left or apply_right:
-                        p_lb = p_WF_t_last_dict[key] - p_WF_dict[key] - self.foot_sticking_tolerance
-                        p_ub = p_lb + 2 * self.foot_sticking_tolerance  # symmetric window
+            for key, J_WF in J_WF_dict.items():
+                key_lower = key.lower()
+                apply_left = ("left" in key_lower) and foot_sticking[left_key]
+                apply_right = ("right" in key_lower) and foot_sticking[right_key]
+                if apply_left or apply_right:
+                    p_lb = p_WF_t_last_dict[key] - p_WF_dict[key] - self.foot_sticking_tolerance
+                    p_ub = p_lb + 2 * self.foot_sticking_tolerance  # symmetric window
 
                         Jxy = J_WF[:2, self.q_a_indices]  # (2 x nq_act)
                         constraints += [
