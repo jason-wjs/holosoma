@@ -22,17 +22,11 @@ python examples/robot_retarget.py --data_path demo_data/climb --task-type climbi
 ## Batch Processing for Motion Retargeting
 
 ```bash
-# Robot-only (OMOMO)
-python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new --task-type robot_only --data_format smplh --save_dir demo_results_parallel/g1/robot_only/omomo --task-config.object-name ground
-
-# Object interaction (OMOMO)
-python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new --task-type object_interaction --data_format smplh --save_dir demo_results_parallel/g1/object_interaction/omomo --task-config.object-name largebox
+# Robot-only (OMOMO) on ADAM-SP
+python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new --task-type robot_only --data_format smplh --save_dir demo_results_parallel/g1/robot_only/omomo --task-config.object-name ground --robot adam_sp
 
 # Object interaction (OMOMO) on ADAM-SP
 python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new --task-type object_interaction --data_format smplh --save_dir demo_results_parallel/adam_sp/object_interaction/omomo --task-config.object-name largebox --robot adam_sp
-
-# Climbing
-python examples/parallel_robot_retarget.py --data-dir demo_data/climb --task-type climbing --data_format mocap --robot-config.robot-urdf-file models/g1/g1_29dof_spherehand.urdf --task-config.object-name multi_boxes --save_dir demo_results_parallel/g1/climbing/mocap_climb
 
 # Climbing on ADAM-SP
 python examples/parallel_robot_retarget.py --data-dir demo_data/climb --task-type climbing --data_format mocap --task-config.object-name multi_boxes --save_dir demo_results_parallel/adam_sp/climbing/mocap_climb --robot adam_sp --robot-config.robot-urdf-file models/adam_sp/adam_sp_29dof_spherehand.urdf
