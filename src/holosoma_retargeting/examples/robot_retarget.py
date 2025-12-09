@@ -597,7 +597,20 @@ def main(cfg: RetargetingConfig) -> None:
 
     # Ensure configs match top-level selections
     if cfg.robot_config.robot_type != robot:
-        cfg.robot_config = RobotConfig(robot_type=robot)
+        # Preserve user overrides (e.g., custom URDF) while aligning robot_type
+        cfg.robot_config = RobotConfig(
+            robot_type=robot,
+            robot_dof=cfg.robot_config.robot_dof,
+            robot_height=cfg.robot_config.robot_height,
+            robot_name=cfg.robot_config.robot_name,
+            robot_urdf_file=cfg.robot_config.robot_urdf_file,
+            foot_sticking_links=cfg.robot_config.foot_sticking_links,
+            q_a_standing=cfg.robot_config.q_a_standing,
+            manual_lb=cfg.robot_config.manual_lb,
+            manual_ub=cfg.robot_config.manual_ub,
+            manual_cost=cfg.robot_config.manual_cost,
+            nominal_tracking_indices=cfg.robot_config.nominal_tracking_indices,
+        )
 
     if cfg.motion_data_config.robot_type != robot or cfg.motion_data_config.data_format != data_format:
         cfg.motion_data_config = MotionDataConfig(data_format=data_format, robot_type=robot)
