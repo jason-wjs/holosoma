@@ -36,6 +36,7 @@ from holosoma_retargeting.src.utils import (  # noqa: E402
     create_scaled_multi_boxes_urdf,
     create_scaled_multi_boxes_xml,
     estimate_human_orientation,
+    ensure_climbing_scene_xml,
     extract_foot_sticking_sequence_velocity,
     extract_object_first_moving_frame,
     load_intermimic_data,
@@ -308,6 +309,8 @@ def setup_object_data(
         box_asset_xml = object_dir / "box_assets.xml"
         scene_xml_name = Path(constants.ROBOT_URDF_FILE).name.replace(".urdf", f"_w_{constants.OBJECT_NAME}.xml")
         scene_xml_file = object_dir / scene_xml_name
+        base_robot_xml = Path(constants.ROBOT_URDF_FILE).with_suffix(".xml")
+        ensure_climbing_scene_xml(str(base_robot_xml), object_dir, scene_xml_file)
         # Set SCENE_XML_FILE in constants BEFORE creating retargeter (needed for temp_retargeter)
         constants.SCENE_XML_FILE = str(scene_xml_file)
 

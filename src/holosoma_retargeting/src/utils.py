@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 import pickle
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import numpy as np
@@ -634,6 +635,44 @@ def create_scaled_multi_boxes_urdf(
         f.write(content)
 
     return output_path
+
+
+def ensure_climbing_scene_xml(base_robot_xml: str, object_dir: Path, scene_xml_path: Path) -> str:
+    """Create a climbing scene XML that merges the robot XML with box assets/bodies if missing."""
+    object_dir = Path(object_dir)
+    scene_xml_path = Path(scene_xml_path)
+    if scene_xml_path.exists():
+        return str(scene_xml_path)
+
+    base_xml_path = Path(base_robot_xml)
+    if not base_xml_path.exists():
+        raise FileNotFoundError(f"Base robot XML not found: {base_robot_xml}")
+
+    tree = ET.parse(base_xml_path)
+    root = tree.getroot()
+
+    compiler = root.find("compiler")
+    if compiler is not None:
+        meshdir_attr = compiler.get("meshdir", "")
+        robot_meshdir = (base_xml_path.parent / meshdir_attr) if meshdir_attr else (base_xml_path.parent / "meshes")
+        rel_meshdir = os.path.relpath(robot_meshdir, scene_xml_path.parent)
+        compiler.set("meshdir", rel_meshdir)
+
+    asset = root.find("asset")
+    if asset is None:
+        raise ValueError("Robot XML must contain an <asset> section")
+    if not any(elem.tag == "include" and elem.attrib.get("file") == "box_assets.xml" for elem in asset):
+        asset.append(ET.Element("include", {"file": "box_assets.xml"}))
+
+    worldbody = root.find("worldbody")
+    if worldbody is None:
+        raise ValueError("Robot XML must contain a <worldbody> section")
+    if not any(elem.tag == "include" and elem.attrib.get("file") == "box_body.xml" for elem in worldbody):
+        worldbody.append(ET.Element("include", {"file": "box_body.xml"}))
+
+    object_dir.mkdir(parents=True, exist_ok=True)
+    tree.write(scene_xml_path, encoding="utf-8", xml_declaration=True)
+    return str(scene_xml_path)
 
 
 def create_scaled_multi_boxes_xml(
