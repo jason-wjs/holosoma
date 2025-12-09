@@ -6,20 +6,29 @@ ROOT_DIR=$(dirname "$SCRIPT_DIR")
 
 # Create overall workspace
 source ${SCRIPT_DIR}/source_common.sh
-ENV_ROOT=$CONDA_ROOT/envs/hssim
 SENTINEL_FILE=${WORKSPACE_DIR}/.env_setup_finished_isaacsim
 
 mkdir -p $WORKSPACE_DIR
 
-if [[ ! -f $SENTINEL_FILE ]]; then
-  # Install miniconda
-  if [[ ! -d $CONDA_ROOT ]]; then
-    mkdir -p $CONDA_ROOT
-    curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o $CONDA_ROOT/miniconda.sh
-    bash $CONDA_ROOT/miniconda.sh -b -u -p $CONDA_ROOT
-    rm $CONDA_ROOT/miniconda.sh
-  fi
+# Detect existing conda installation
+if command -v conda &> /dev/null; then
+  # Use conda from PATH
+  CONDA_BIN=$(which conda)
+  CONDA_ROOT=$(dirname $(dirname $CONDA_BIN))
+elif [[ -d "$HOME/miniconda3" ]]; then
+  # Use miniconda3 in home directory
+  CONDA_ROOT="$HOME/miniconda3"
+elif [[ -d "$HOME/anaconda3" ]]; then
+  # Use anaconda3 in home directory
+  CONDA_ROOT="$HOME/anaconda3"
+else
+  echo "Error: Could not find conda installation. Please ensure conda is in PATH or installed at $HOME/miniconda3"
+  exit 1
+fi
 
+ENV_ROOT=$CONDA_ROOT/envs/hssim
+
+if [[ ! -f $SENTINEL_FILE ]]; then
   # Create the conda environment
   if [[ ! -d $ENV_ROOT ]]; then
     $CONDA_ROOT/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main

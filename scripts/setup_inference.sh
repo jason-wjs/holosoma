@@ -31,11 +31,27 @@ esac
 
 # Create overall workspace
 source ${SCRIPT_DIR}/source_common.sh
-ENV_ROOT=$CONDA_ROOT/envs/hsinference
-
 SENTINEL_FILE=${WORKSPACE_DIR}/.env_setup_finished_inference
 
 mkdir -p $WORKSPACE_DIR
+
+# Detect existing conda installation
+if command -v conda &> /dev/null; then
+  # Use conda from PATH
+  CONDA_BIN=$(which conda)
+  CONDA_ROOT=$(dirname $(dirname $CONDA_BIN))
+elif [[ -d "$HOME/miniconda3" ]]; then
+  # Use miniconda3 in home directory
+  CONDA_ROOT="$HOME/miniconda3"
+elif [[ -d "$HOME/anaconda3" ]]; then
+  # Use anaconda3 in home directory
+  CONDA_ROOT="$HOME/anaconda3"
+else
+  echo "Error: Could not find conda installation. Please ensure conda is in PATH or installed at $HOME/miniconda3"
+  exit 1
+fi
+
+ENV_ROOT=$CONDA_ROOT/envs/hsinference
 
 if [[ ! -f $SENTINEL_FILE ]]; then
   # Install swig based on OS
@@ -50,14 +66,6 @@ if [[ ! -f $SENTINEL_FILE ]]; then
       eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
     $INSTALL_CMD swig
-  fi
-
-  # Install miniconda
-  if [[ ! -d $CONDA_ROOT ]]; then
-    mkdir -p $CONDA_ROOT
-    curl $MINICONDA_URL -o $CONDA_ROOT/miniconda.sh
-    bash $CONDA_ROOT/miniconda.sh -b -u -p $CONDA_ROOT
-    rm $CONDA_ROOT/miniconda.sh
   fi
 
   # Create the conda environment

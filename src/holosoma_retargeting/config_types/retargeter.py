@@ -23,6 +23,9 @@ class RetargeterConfig:
     activate_obj_non_penetration: bool = True
     """Whether to enforce object non-penetration constraints."""
 
+    max_penetration_constraints: int = 10
+    """Maximum number of penetration constraints to enforce."""
+
     activate_foot_sticking: bool = True
     """Whether to enforce foot sticking constraints."""
 
@@ -46,3 +49,7 @@ class RetargeterConfig:
 
     nominal_tracking_tau: float = 1e6
     """Time constant for the nominal tracking cost."""
+    n_first_iter: int = 25
+    """Number of iterations for the first frame."""
+    n_subsequent_iter: int = 5
+    """Number of iterations for the subsequent frames."""

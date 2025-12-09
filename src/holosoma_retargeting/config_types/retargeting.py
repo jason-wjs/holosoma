@@ -24,7 +24,8 @@ class RetargetingConfig:
     """Type of retargeting task."""
 
     # --- top-level run knobs ---
-    robot: Literal["g1", "t1"] = "g1"
+    # TODO: Add your new robot type to this Literal type
+    robot: Literal["g1", "t1","adam_sp"] = "g1"  # Add new robot type here, e.g., Literal["g1", "t1", "new_robot"]
     """Robot type."""
 
     data_format: Literal["lafan", "smplh", "mocap"] | None = None
@@ -41,6 +42,9 @@ class RetargetingConfig:
 
     augmentation: bool = False
     """Whether to use augmentation."""
+
+    legs_only: bool = False
+    """Whether to only keep legs joints."""
 
     # --- Nested configs ---
     robot_config: RobotConfig = field(default_factory=lambda: RobotConfig(robot_type="g1"))

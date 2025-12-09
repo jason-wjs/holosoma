@@ -246,6 +246,67 @@ JOINTS_MAPPINGS = {
         "LeftFoot": "Ankle_Cross_Left",
         "RightFoot": "Ankle_Cross_Right",
     },
+    # TODO: Add joint mappings for your new robot
+    # You need to add mappings for each data format (lafan, smplh, mocap)
+    # The mapping connects human joint names (from DEMO_JOINTS) to robot link names (from URDF)
+    # Example for lafan format:
+    ("lafan", "adam_sp"): {
+        "Spine1": "pelvis",  # Human joint name: Robot link name
+        "LeftUpLeg": "hipPitchLeft",
+        "RightUpLeg": "hipPitchRight",
+        "LeftLeg": "shinLeft",
+        "RightLeg": "shinRight",
+        "LeftArm": "shoulderPitchLeft",
+        "RightArm": "shoulderPitchRight",
+        "LeftForeArm": "elbowLeft",
+        "RightForeArm": "elbowRight",
+        "LeftFoot": "toeLeft",
+        "RightFoot": "toeRight",
+        "LeftToeBase": "toeTipLeft",
+        "RightToeBase": "toeTipRight",
+        "LeftHand": "wristRollLeft",  # 使用 wristRollLeft 而不是 wristYawLeft，因为 wristYaw 关节被注释
+        "RightHand": "wristRollRight",  # 使用 wristRollRight 而不是 wristYawRight
+        # ... add all required mappings
+    },
+    # Example for smplh format:
+    ("smplh", "adam_sp"): {
+        "Pelvis": "pelvis",
+        "Chest": "torso",
+        "L_Hip": "thighLeft",
+        "R_Hip": "thighRight",
+        "L_Knee": "shinLeft",
+        "R_Knee": "shinRight",
+        "L_Shoulder": "shoulderPitchLeft",
+        "R_Shoulder": "shoulderPitchRight",
+        "L_Elbow": "elbowLeft",
+        "R_Elbow": "elbowRight",
+        "L_Ankle": "toeLeft",
+        "R_Ankle": "toeRight",
+        "L_Toe": "toeTipLeft",
+        "R_Toe": "toeTipRight",
+        "L_Wrist": "wristRollLeft",  # 使用 wristRollLeft 而不是 wristYawLeft，因为 wristYaw 关节被注释
+        "R_Wrist": "wristRollRight",  # 使用 wristRollRight 而不是 wristYawRight
+        # ... add all required mappings
+    },
+    # Example for mocap format:
+    ("mocap", "adam_sp"): {
+        "Spine1": "pelvis",
+        "LeftUpLeg": "hipPitchLeft",
+        "LeftLeg": "shinLeft",
+        "LeftToeBase": "toeLeft",
+        "RightUpLeg": "hipPitchRight",
+        "RightLeg": "shinRight",
+        "RightToeBase": "toeRight",
+        "LeftArm": "shoulderRollLeft",
+        "LeftForeArm": "elbowLeft",
+        "LeftHandMiddle3": "wristRollLeft",  # 使用 wristRollLeft 而不是 wristYawLeft，因为 wristYaw 关节被注释
+        "RightArm": "shoulderRollRight",
+        "RightForeArm": "elbowRight",
+        "RightHandMiddle3": "wristRollRight",  # 使用 wristRollRight 而不是 wristYawRight
+        "LeftFoot": "anklePitchLeft",
+        "RightFoot": "anklePitchRight",
+        # ... add all required mappings
+    },
 }
 
 # Data format specific constants
@@ -283,7 +344,8 @@ class MotionDataConfig:
     """
 
     data_format: Literal["lafan", "smplh", "mocap"] = "smplh"
-    robot_type: Literal["g1", "t1"] = "g1"
+    # TODO: Add your new robot type to this Literal type
+    robot_type: Literal["g1", "t1","adam_sp"] = "g1"  
 
     # Optional overrides - if None, will use defaults from data_format
     demo_joints: list[str] | None = None

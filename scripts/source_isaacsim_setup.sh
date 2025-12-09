@@ -1,4 +1,5 @@
 # Detect script directory (works in both bash and zsh)
+# sexport CONDA_ROOT=
 if [ -n "${BASH_SOURCE[0]}" ]; then
     SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 elif [ -n "${ZSH_VERSION}" ]; then

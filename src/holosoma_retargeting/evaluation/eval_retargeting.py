@@ -61,6 +61,9 @@ def create_task_constants(
     for attr, value in motion_data_config.legacy_constants().items():
         setattr(namespace, attr, value)
 
+    # Add ROBOT_TYPE from robot_config.robot_type
+    namespace.ROBOT_TYPE = robot_config.robot_type
+
     # Override or supplement object information if requested
     if object_name is not None:
         namespace.OBJECT_NAME = object_name
@@ -97,6 +100,7 @@ class RetargetingEvaluator:
         joints_mapping: Dict[str, str],
         visualize: bool = True,
         constants: SimpleNamespace | None = None,
+        robot_type: Literal["g1", "t1","adam_sp"] = "g1",
     ):
         """Initialize evaluator with robot and object models."""
         if constants is None:
@@ -160,6 +164,7 @@ class RetargetingEvaluator:
             self._bake_object_mesh_from_xml()
 
         self.constants = constants
+        self.robot_type = robot_type
 
     def _bake_object_mesh_from_xml(self):
         """Bake world-frame triangle soup for geoms whose name contains self.object_name (mesh geoms only)."""
@@ -387,8 +392,16 @@ class RetargetingEvaluator:
         left_toe_positions = []
         right_toe_positions = []
         for q in q_trajectory:
+            if self.robot_type == "g1":
+                toe_link_names = ["left_ankle_roll_sphere_5_link", "right_ankle_roll_sphere_5_link"]
+            elif self.robot_type == "t1":
+                toe_link_names = ["left_foot_sphere_5_link", "right_foot_sphere_5_link"]
+            elif self.robot_type == "adam_sp":
+                toe_link_names = ["toeTipLeft", "toeTipRight"]
+            else:
+                raise ValueError(f"Unsupported robot type: {self.robot_type}")
             toe_positions = self._get_robot_link_positions(
-                q, ["left_ankle_roll_sphere_5_link", "right_ankle_roll_sphere_5_link"]
+                q, toe_link_names
             )
             left_toe_positions.append(toe_positions[0])
             right_toe_positions.append(toe_positions[1])
@@ -651,6 +664,7 @@ def _evaluate_single_task(
     motion_data_config_kwargs: Dict[str, Any],
     object_name: str | None,
     data_type: str,
+    robot_type: str,
 ):
     robot_config = RobotConfig(**robot_config_kwargs)
     motion_data_config = MotionDataConfig(**motion_data_config_kwargs)
@@ -696,6 +710,7 @@ def _evaluate_single_task(
         joints_mapping=constants.JOINTS_MAPPING,
         visualize=False,
         constants=constants,
+        robot_type=constants.ROBOT_TYPE,
     )
     if data_type == "robot_object":
         return task_name, evaluator.evaluate_trajectory(task_name, data_path, input_data_dir)
@@ -730,7 +745,7 @@ class Args:
     res_dir: Path
     data_dir: Path
     data_type: Literal["robot_object", "robot_only", "robot_terrain"] = "robot_object"
-    robot: Literal["g1", "t1"] = "g1"
+    robot: Literal["g1", "t1","adam_sp"] = "g1"
     data_format: Literal["lafan", "smplh", "mocap"] | None = None
     object_name: str | None = None
     max_workers: int = 1
@@ -791,6 +806,7 @@ def main(cfg: Args) -> None:
                 motion_data_config_kwargs,
                 object_name,
                 cfg.data_type,
+                cfg.robot,
             ): task_name
             for task_name, file_path in zip(task_names, files)
         }

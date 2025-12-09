@@ -75,7 +75,83 @@ _AUGMENTATION_TRANSLATION = np.array([0.2, 0.0, 0.0])
 TaskType = Literal["robot_only", "object_interaction", "climbing"]
 DataFormat = Literal["lafan", "smplh", "mocap"]
 
-
+def filter_joints_mapping_for_legs_only(
+    joints_mapping: dict[str, str],
+    data_format: DataFormat,
+    robot_type: Literal["g1", "t1","adam_sp"],
+) -> dict[str, str]:
+    """过滤关节映射，只保留腿部相关关节。
+    
+    Args:
+        joints_mapping: 完整的关节映射字典
+        data_format: 数据格式 ("lafan", "smplh", "mocap")
+    
+    Returns:
+        过滤后的关节映射，只包含腿部关节
+    """
+    # 定义腿部关节名称（根据数据格式）
+    leg_joint_names = {
+        ("smplh",'g1'): {
+            "Pelvis": "pelvis_contour_link",
+            "L_Hip": "left_hip_pitch_link",
+            "R_Hip": "right_hip_pitch_link",
+            "L_Knee": "left_knee_link",
+            "R_Knee": "right_knee_link",
+            "L_Ankle": "left_ankle_intermediate_1_link",
+            "R_Ankle": "right_ankle_intermediate_1_link",
+            "L_Toe": "left_ankle_roll_sphere_5_link",
+            "R_Toe": "right_ankle_roll_sphere_5_link",
+        },
+        ("smplh",'t1'): {
+            "Pelvis": "Trunk",
+            "L_Hip": "Hip_Pitch_Left",
+            "R_Hip": "Hip_Pitch_Right",
+            "L_Knee": "Shank_Left",
+            "R_Knee": "Shank_Right",
+            "L_Ankle": "Ankle_Cross_Left",
+            "R_Ankle": "Ankle_Cross_Right",
+        },
+        ("smplh",'adam_sp'): {
+            "Pelvis": "pelvis",
+            "L_Hip": "hipPitchLeft",
+            "R_Hip": "hipPitchRight",
+            "L_Knee": "shinLeft",
+            "R_Knee": "shinRight",
+            "L_Ankle": "anklePitchLeft",
+            "R_Ankle": "anklePitchRight",
+        },
+        ("mocap",'g1'): {
+            "Pelvis": "pelvis_contour_link",
+            "LeftUpLeg": "left_hip_pitch_link",
+            "RightUpLeg": "right_hip_pitch_link",
+            "LeftLeg": "left_knee_link",
+            "RightLeg": "right_knee_link",
+            "LeftFoot": "left_ankle_intermediate_1_link",
+            "RightFoot": "right_ankle_intermediate_1_link",
+        },
+        ("mocap",'t1'): {
+            "Pelvis": "Trunk",
+            "LeftUpLeg": "Hip_Pitch_Left",
+            "RightUpLeg": "Hip_Pitch_Right",
+            "LeftLeg": "Shank_Left",
+            "RightLeg": "Shank_Right",
+            "LeftFoot": "Ankle_Cross_Left",
+            "RightFoot": "Ankle_Cross_Right",
+        },
+        ("mocap",'adam_sp'): {
+            "Pelvis": "pelvis",
+            "LeftUpLeg": "hipPitchLeft",
+            "RightUpLeg": "hipPitchRight",
+            "LeftLeg": "shinLeft",
+            "RightLeg": "shinRight",
+            "LeftFoot": "anklePitchLeft",
+            "RightFoot": "anklePitchRight",
+        },
+    }
+    
+    leg_joints = leg_joint_names.get((data_format, robot_type), set())
+    # 只保留腿部关节的映射
+    return {k: v for k, v in joints_mapping.items() if k in leg_joints}
 # ----------------------------- Helper Functions -----------------------------
 
 
@@ -84,6 +160,8 @@ def create_task_constants(
     motion_data_config: MotionDataConfig,
     task_config: TaskConfig,
     task_type: str,
+    legs_only: bool = False,
+    data_format: DataFormat | None = None,
 ) -> SimpleNamespace:
     """Create combined task constants from robot and motion data configs.
 
@@ -92,6 +170,8 @@ def create_task_constants(
         motion_data_config: Motion data format configuration
         task_config: Task-specific configuration
         task_type: Type of task ("robot_only", "object_interaction", "climbing")
+        legs_only: 如果为True，只保留腿部关节的映射
+        data_format: 数据格式，用于过滤关节映射
 
     Returns:
         SimpleNamespace with all task constants
@@ -106,7 +186,18 @@ def create_task_constants(
     # Copy legacy motion data constants (upper-case for compatibility)
     for attr, value in motion_data_config.legacy_constants().items():
         setattr(task_constants, attr, value)
-
+    # 如果只匹配腿部，过滤 JOINTS_MAPPING
+    if legs_only and data_format:
+        original_mapping = task_constants.JOINTS_MAPPING
+        task_constants.JOINTS_MAPPING = filter_joints_mapping_for_legs_only(
+            original_mapping, data_format, robot_config.robot_type
+        )
+        logger.info(
+            "Filtered joints mapping for legs only: %d -> %d joints",
+            len(original_mapping),
+            len(task_constants.JOINTS_MAPPING),
+        )
+        logger.info("Leg joints only: %s", list(task_constants.JOINTS_MAPPING.keys()))
     # Task-specific object setup
     if task_type == "robot_only":
         obj_name = task_config.object_name or "ground"
@@ -442,6 +533,7 @@ def build_retargeter_kwargs_from_config(
         "q_a_init_idx": retargeter_config.q_a_init_idx,
         "activate_joint_limits": retargeter_config.activate_joint_limits,
         "activate_obj_non_penetration": retargeter_config.activate_obj_non_penetration,
+        "max_penetration_constraints": retargeter_config.max_penetration_constraints,
         "activate_foot_sticking": retargeter_config.activate_foot_sticking,
         "penetration_tolerance": retargeter_config.penetration_tolerance,
         "foot_sticking_tolerance": retargeter_config.foot_sticking_tolerance,
@@ -449,6 +541,8 @@ def build_retargeter_kwargs_from_config(
         "visualize": retargeter_config.visualize,
         "debug": retargeter_config.debug,
         "w_nominal_tracking_init": retargeter_config.w_nominal_tracking_init,
+        "n_first_iter": retargeter_config.n_first_iter,
+        "n_subsequent_iter": retargeter_config.n_subsequent_iter,
     }
     if task_type == "climbing":
         kwargs["nominal_tracking_tau"] = retargeter_config.nominal_tracking_tau
@@ -610,6 +704,9 @@ def main(cfg: RetargetingConfig) -> None:
         motion_data_config=cfg.motion_data_config,
         task_config=cfg.task_config,
         task_type=task_type,
+        legs_only=cfg.legs_only,
+        data_format=data_format,  # 新增：传递数据格式
+
     )
 
     # Load motion data

@@ -33,6 +33,7 @@ from utils import (  # type: ignore[import-not-found,no-redef]  # noqa: E402
     transform_points_world_to_local,
 )
 from viser_utils import create_motion_control_sliders  # type: ignore[import-not-found,no-redef]  # noqa: E402
+from performance_profiler import PerformanceProfiler  # type: ignore[import-not-found,no-redef]  # noqa: E402
 
 
 class InteractionMeshRetargeter:
@@ -48,6 +49,7 @@ class InteractionMeshRetargeter:
         q_a_init_idx: int = -7,
         activate_foot_sticking: bool = True,
         activate_obj_non_penetration: bool = True,
+        max_penetration_constraints: int = 10,
         activate_joint_limits: bool = True,
         step_size: float = 0.2,
         collision_detection_threshold: float = 0.1,
@@ -57,6 +59,8 @@ class InteractionMeshRetargeter:
         debug: bool = False,
         w_nominal_tracking_init: float = 5.0,
         nominal_tracking_tau: float = 10.0,
+        n_first_iter: int = 25,
+        n_subsequent_iter: int = 5,
     ):
         """This kinematic retargeter solves the diffIK problem with hard constraints in SQP style.
         During each SQP iteration, the problem is solved with the following constraints and costs:
@@ -85,6 +89,7 @@ class InteractionMeshRetargeter:
         self.collision_detection_threshold = collision_detection_threshold
         self.activate_foot_sticking = activate_foot_sticking
         self.activate_obj_non_penetration = activate_obj_non_penetration
+        self.max_penetration_constraints = max_penetration_constraints
         self.activate_joint_limits = activate_joint_limits
         self.foot_links = dict(zip(task_constants.FOOT_STICKING_LINKS, task_constants.FOOT_STICKING_LINKS))
         self.penetration_tolerance = penetration_tolerance
@@ -114,9 +119,9 @@ class InteractionMeshRetargeter:
             robot_xml_path = self.task_constants.SCENE_XML_FILE
         else:
             robot_xml_path = self.robot_model_path.replace(".urdf", "_w_" + self.object_name + ".xml")
-
-        self.robot_model = mujoco.MjModel.from_xml_path(robot_xml_path)
         print("Loading robot model from: ", robot_xml_path)
+        self.robot_model = mujoco.MjModel.from_xml_path(robot_xml_path)
+        
 
         self.robot_data = mujoco.MjData(self.robot_model)
 
@@ -164,6 +169,13 @@ class InteractionMeshRetargeter:
         self.w_nominal_tracking_init = w_nominal_tracking_init
         self.nominal_tracking_tau = nominal_tracking_tau
         self.track_nominal_indices = task_constants.NOMINAL_TRACKING_INDICES
+        self.n_first_iter = n_first_iter
+        self.n_subsequent_iter = n_subsequent_iter
+        # 性能分析器
+        self.profiler = PerformanceProfiler(enabled=debug)  # 仅在 debug 模式启用
+
+
+
 
     def _setup_visualization(self):
         """Setup Viser visualization components."""
@@ -330,11 +342,13 @@ class InteractionMeshRetargeter:
         tetrahedra = []
         obj_pts_demo_list = []  # scaled object pts
         obj_pts_list = []  # original size object pts
-
+        frame_time =np.zeros(num_frames)
         print(f"\nStarting motion retargeting for {num_frames} frames...")
 
         with tqdm(range(num_frames)) as pbar:
             for i in pbar:
+                frame_start_time = time.perf_counter()
+                
                 # Get object poses and transform points
                 object_quat_demo = object_poses[i, 3:]
                 object_trans_demo = object_poses[i, :3]
@@ -383,19 +397,20 @@ class InteractionMeshRetargeter:
                 else:
                     w_nominal_tracking = self.w_nominal_tracking_init * np.exp(-i / self.nominal_tracking_tau)
 
-                q, cost = self.iterate(
-                    q_locked=q_locked_list[i],
-                    q_n=q,
-                    q_t_last=retargeted_motions[-1],
-                    target_laplacian=target_laplacian,
-                    adj_list=adj_list,
-                    obj_pts_local=object_points_local,
-                    foot_sticking=foot_sticking_sequences[i],
-                    w_nominal_tracking=w_nominal_tracking,
-                    q_a_nominal=(q_nominal_list[i, self.q_a_indices] if q_nominal_list is not None else None),
-                    init_t=i == 0,
-                    n_iter=50 if i == 0 else 10,
-                )
+                with self.profiler.time_section("4_optimization_iterate"):
+                    q, cost = self.iterate(
+                        q_locked=q_locked_list[i],
+                        q_n=q,
+                        q_t_last=retargeted_motions[-1],
+                        target_laplacian=target_laplacian,
+                        adj_list=adj_list,
+                        obj_pts_local=object_points_local,
+                        foot_sticking=foot_sticking_sequences[i],
+                        w_nominal_tracking=w_nominal_tracking,
+                        q_a_nominal=(q_nominal_list[i, self.q_a_indices] if q_nominal_list is not None else None),
+                        init_t=i == 0,
+                        n_iter=self.n_first_iter if i == 0 else self.n_subsequent_iter,
+                    )
                 if self.debug:
                     robot_link_positions = self._get_robot_link_positions(
                         q, self.laplacian_match_links.values()
@@ -407,9 +422,16 @@ class InteractionMeshRetargeter:
                 retargeted_motions.append(q)
                 if self.visualize and self.debug:
                     self.draw_q(q)
-
-                pbar.set_postfix(cost=cost)
-
+                frame_time[i] = time.perf_counter() - frame_start_time
+                self.profiler.record_value("total_frame_time", frame_time[i])
+                # print(f"Frame {i+1}/{num_frames}: {frame_time*1000:.2f} ms (cost: {cost:.6f})")
+                pbar.set_postfix(cost=cost, time=f"{frame_time[i]*1000:.1f}ms")
+        
+        print(f"Average frame time: {np.mean(frame_time)*1000:.1f}ms")
+        
+        # 打印性能分析摘要
+        if self.profiler.enabled:
+            self.profiler.print_summary()
         # Remove previous debug visualization
         if self.debug:
             for handle in human_kpts_handle_list:
@@ -427,6 +449,7 @@ class InteractionMeshRetargeter:
             for handle in robot_kpts_handle_list:
                 handle.remove()
             robot_kpts_handle_list.clear()
+                        # 计算并打印每帧耗时
 
         # Save results
         np.savez(
@@ -498,42 +521,47 @@ class InteractionMeshRetargeter:
             obj_original: the original object pose (used for contact matching).
             init_t: the current time step is the first time step.
         """
+        
         assert len(q_a_n_last) == self.nq_a
 
         # Lock the object pose and set the current robot slice to last accepted solution
         q = np.copy(q_locked)
         q[self.q_a_indices] = q_a_n_last
-
+        # 缓存前向运算结果
+        self.robot_data.qpos[:] = q
+        mujoco.mj_forward(self.robot_model, self.robot_data)
         # Compute Laplacian pieces
-        J_OC_dict, p_OC_dict, _ = self._calc_manipulator_jacobians(
-            q, links=self.laplacian_match_links, obj_frame=(self.object_name != "ground")
-        )
-        robot_link_keys = list(self.laplacian_match_links.keys())
-        V_r = len(robot_link_keys)
-        V_o = len(obj_pts_local)
-        V = V_r + V_o
+        with self.profiler.time_section("4.1_jacobian_calculation"):
+            J_OC_dict, p_OC_dict, _ = self._calc_manipulator_jacobians(
+                q, links=self.laplacian_match_links, obj_frame=(self.object_name != "ground")
+            )
+            robot_link_keys = list(self.laplacian_match_links.keys())
+            V_r = len(robot_link_keys)
+            V_o = len(obj_pts_local)
+            V = V_r + V_o
 
-        # Stack Jacobians for robot points
-        J_V = np.zeros((3 * V, self.nq_a))
-        for i, key in enumerate(robot_link_keys):
-            J_V[3 * i : 3 * (i + 1), :] = J_OC_dict[key]
+            # Stack Jacobians for robot points
+            J_V = np.zeros((3 * V, self.nq_a))
+            for i, key in enumerate(robot_link_keys):
+                J_V[3 * i : 3 * (i + 1), :] = J_OC_dict[key]
 
-        robot_pts_local = np.array([p_OC_dict[k] for k in robot_link_keys])
-        vertices = np.vstack([robot_pts_local, obj_pts_local])  # (V x 3)
+            robot_pts_local = np.array([p_OC_dict[k] for k in robot_link_keys])
+            vertices = np.vstack([robot_pts_local, obj_pts_local])  # (V x 3)
 
-        L = calculate_laplacian_matrix(vertices, adj_list)  # (V x V), EXPECT SPARSE OR SMALL
-        if not sp.issparse(L):
-            L = sp.csr_matrix(L)
+        with self.profiler.time_section("4.2_laplacian_matrix"):
+            L = calculate_laplacian_matrix(vertices, adj_list)  # (V x V), EXPECT SPARSE OR SMALL
+            if not sp.issparse(L):
+                L = sp.csr_matrix(L)
 
-        Kron = sp.kron(L, sp.eye(3, format="csr"), format="csr")
-        J_L = Kron @ J_V
+            Kron = sp.kron(L, sp.eye(3, format="csr"), format="csr")
+            J_L = Kron @ J_V
 
-        lap0 = L @ vertices
-        lap0_vec = lap0.reshape(-1)  # (3V,)
-        target_lap_vec = target_laplacian.reshape(-1)  # (3V,)
+            lap0 = L @ vertices
+            lap0_vec = lap0.reshape(-1)  # (3V,)
+            target_lap_vec = target_laplacian.reshape(-1)  # (3V,)
 
-        w_v = (self.laplacian_weights * np.ones(V)).astype(float)  # (V,)
-        sqrt_w3 = np.sqrt(np.repeat(w_v, 3))
+            w_v = (self.laplacian_weights * np.ones(V)).astype(float)  # (V,)
+            sqrt_w3 = np.sqrt(np.repeat(w_v, 3))
 
         # Decision variables
         dqa = cp.Variable(len(self.q_a_indices), name="dqa")
@@ -546,34 +574,44 @@ class InteractionMeshRetargeter:
         constraints += [cp.Constant(J_L[:, self.q_a_indices]) @ dqa - lap_var == -lap0_vec]
 
         # Foot sticking
-        if (self.q_a_init_idx < 12) and self.activate_foot_sticking:
-            J_WF_dict, p_WF_dict, _ = self._calc_manipulator_jacobians(q, links=self.foot_links, obj_frame=False)
-            _, p_WF_t_last_dict, _ = self._calc_manipulator_jacobians(q_t_last, links=self.foot_links, obj_frame=False)
-            # Identify 'left' and 'right' flags from provided keys
-            left_key = right_key = None
-            for key in foot_sticking:
-                if key.lower().startswith("l"):
-                    left_key = key
-                elif key.lower().startswith("r"):
-                    right_key = key
-            if left_key is None or right_key is None:
-                raise ValueError("foot_sticking must include one left* and one right* key")
+        with self.profiler.time_section("4.3_foot_sticking_constraints"):
+            if (self.q_a_init_idx < 12) and self.activate_foot_sticking:
+                J_WF_dict, p_WF_dict, _ = self._calc_manipulator_jacobians(q, links=self.foot_links, obj_frame=False)
+                _, p_WF_t_last_dict, _ = self._calc_manipulator_jacobians(q_t_last, links=self.foot_links, obj_frame=False)
+                # Identify 'left' and 'right' flags from provided keys
+                left_key = right_key = None
+                for key in foot_sticking:
+                    if key.lower().startswith("l"):
+                        left_key = key
+                    elif key.lower().startswith("r"):
+                        right_key = key
+                if left_key is None or right_key is None:
+                    raise ValueError("foot_sticking must include one left* and one right* key")
 
-            for key, J_WF in J_WF_dict.items():
-                apply_left = ("left" in key) and foot_sticking[left_key]
-                apply_right = ("right" in key) and foot_sticking[right_key]
-                if apply_left or apply_right:
-                    p_lb = p_WF_t_last_dict[key] - p_WF_dict[key] - self.foot_sticking_tolerance
-                    p_ub = p_lb + 2 * self.foot_sticking_tolerance  # symmetric window
+                for key, J_WF in J_WF_dict.items():
+                    apply_left = ("left" in key) and foot_sticking[left_key]
+                    apply_right = ("right" in key) and foot_sticking[right_key]
+                    if apply_left or apply_right:
+                        p_lb = p_WF_t_last_dict[key] - p_WF_dict[key] - self.foot_sticking_tolerance
+                        p_ub = p_lb + 2 * self.foot_sticking_tolerance  # symmetric window
 
-                    Jxy = J_WF[:2, self.q_a_indices]  # (2 x nq_act)
-                    constraints += [
-                        Jxy @ dqa >= p_lb[:2],
-                        Jxy @ dqa <= p_ub[:2],
-                    ]
-
+                        Jxy = J_WF[:2, self.q_a_indices]  # (2 x nq_act)
+                        constraints += [
+                            Jxy @ dqa >= p_lb[:2],
+                            Jxy @ dqa <= p_ub[:2],
+                        ]
+        
         # Non-penetration constraints
-        Js, phis = self._update_jacobians_and_phis_from_q(q)
+        with self.profiler.time_section("4.4_collision_detection"):
+            Js, phis = self._update_jacobians_and_phis_from_q(q)
+            self.profiler.increment_counter("collision_pairs_detected", len(phis))
+            
+            if self.activate_obj_non_penetration and len(phis) > self.max_penetration_constraints:  # 如果约束太多，只保留最紧急的
+                    sorted_phis = sorted(phis.items(), key=lambda x: x[1])
+                    phis = dict(sorted_phis[:self.max_penetration_constraints])  # 只保留前10个最紧急的
+                    Js = {k: Js[k] for k in phis.keys()}
+                    self.profiler.increment_counter("collision_pairs_filtered", len(phis))
+
         for key, phi in phis.items():
             Ja_n_full = Js[key]
             Ja_n = Ja_n_full[self.q_a_indices]
@@ -591,49 +629,54 @@ class InteractionMeshRetargeter:
         constraints += [cp.SOC(self.step_size, dqa)]
 
         # Objective
-        obj_terms = []
+        with self.profiler.time_section("4.5_build_optimization_problem"):
+            obj_terms = []
 
-        obj_terms.append(cp.sum_squares(cp.multiply(sqrt_w3, lap_var - target_lap_vec)))
+            obj_terms.append(cp.sum_squares(cp.multiply(sqrt_w3, lap_var - target_lap_vec)))
 
-        # nominal tracking for selected indices
-        if (w_nominal_tracking > 0) and (q_a_nominal is not None):
-            idx = np.array(self.track_nominal_indices, dtype=int)
-            if idx.size > 0:
-                z = dqa[idx] - (q_a_nominal[idx] - q_a_n_last[idx])
-                obj_terms.append(w_nominal_tracking * cp.sum_squares(z))
+            # nominal tracking for selected indices
+            if (w_nominal_tracking > 0) and (q_a_nominal is not None):
+                idx = np.array(self.track_nominal_indices, dtype=int)
+                if idx.size > 0:
+                    z = dqa[idx] - (q_a_nominal[idx] - q_a_n_last[idx])
+                    obj_terms.append(w_nominal_tracking * cp.sum_squares(z))
 
-        # Q_diag cost
-        Qd = np.asarray(self.Q_diag, dtype=float).reshape(-1)
-        obj_terms.append(cp.sum_squares(cp.multiply(np.sqrt(Qd), dqa + q_a_n_last)))
+            # Q_diag cost
+            Qd = np.asarray(self.Q_diag, dtype=float).reshape(-1)
+            obj_terms.append(cp.sum_squares(cp.multiply(np.sqrt(Qd), dqa + q_a_n_last)))
 
-        # Smoothness cost
-        dqa_smooth = q_t_last[self.q_a_indices] - q_a_n_last
-        if np.isscalar(self.smooth_weight):
-            obj_terms.append(self.smooth_weight * cp.sum_squares(dqa - dqa_smooth))
-        else:
-            Wsmooth = np.asarray(self.smooth_weight, dtype=float)
-            if Wsmooth.ndim == 1:
-                obj_terms.append(cp.sum_squares(cp.multiply(np.sqrt(Wsmooth), dqa - dqa_smooth)))
+            # Smoothness cost
+            dqa_smooth = q_t_last[self.q_a_indices] - q_a_n_last
+            if np.isscalar(self.smooth_weight):
+                obj_terms.append(self.smooth_weight * cp.sum_squares(dqa - dqa_smooth))
             else:
-                # if a full matrix was supplied, fall back to quad_form
-                obj_terms.append(cp.quad_form(dqa - dqa_smooth, Wsmooth))
+                Wsmooth = np.asarray(self.smooth_weight, dtype=float)
+                if Wsmooth.ndim == 1:
+                    obj_terms.append(cp.sum_squares(cp.multiply(np.sqrt(Wsmooth), dqa - dqa_smooth)))
+                else:
+                    # if a full matrix was supplied, fall back to quad_form
+                    obj_terms.append(cp.quad_form(dqa - dqa_smooth, Wsmooth))
 
-        problem = cp.Problem(cp.Minimize(cp.sum(obj_terms)), constraints)
+            problem = cp.Problem(cp.Minimize(cp.sum(obj_terms)), constraints)
+            self.profiler.increment_counter("total_constraints", len(constraints))
 
         # -------- Solve with Clarabel --------
-        solver_kwargs = {"verbose": verbose}
-        problem.solve(solver=cp.CLARABEL, **solver_kwargs)
-        if (problem.status not in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE)) and init_t:
-            constraints = [c for c in constraints if not isinstance(c, cp.constraints.second_order.SOC)]
-            problem = cp.Problem(cp.Minimize(cp.sum(obj_terms)), constraints)
+        with self.profiler.time_section("4.6_solve_qp"):
+            solver_kwargs = {
+                "verbose": verbose,
+            }
             problem.solve(solver=cp.CLARABEL, **solver_kwargs)
+            if (problem.status not in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE)) and init_t:
+                constraints = [c for c in constraints if not isinstance(c, cp.constraints.second_order.SOC)]
+                # 如果上一次的 dqa 解存在，则使用上一次的 dqa 解
 
-        if problem.status not in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE):
-            raise RuntimeError(f"CVXPY solve failed: {problem.status}")
+                problem = cp.Problem(cp.Minimize(cp.sum(obj_terms)), constraints)
+                problem.solve(solver=cp.CLARABEL, **solver_kwargs)
+                if problem.status not in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE):
+                    raise RuntimeError(f"CVXPY solve failed: {problem.status}")
 
         dqa_star = dqa.value
         cost = problem.value
-
         q_star = np.copy(q)
         q_star[self.q_a_indices] = dqa_star + q_a_n_last
         q_star[3:7] /= np.linalg.norm(q_star[3:7]) + 1e-12
@@ -871,8 +914,9 @@ class InteractionMeshRetargeter:
 
     def _update_jacobians_and_phis_from_q(self, q: np.ndarray):
         self.robot_data.qpos[:] = q
-
-        mujoco.mj_forward(self.robot_model, self.robot_data)  # kinematics & AABBs valid
+        with self.profiler.time_section("mj_forward"):
+            mujoco.mj_forward(self.robot_model, self.robot_data)  # kinematics & AABBs valid
+        self.profiler.increment_counter("mj_forward_calls", 1)
 
         m, d = self.robot_model, self.robot_data
         threshold = float(self.collision_detection_threshold)
@@ -1028,7 +1072,9 @@ class InteractionMeshRetargeter:
         p_body = np.asarray(p_body, dtype=float).reshape(3)
 
         # 1) Make sure kinematics are current once
-        mujoco.mj_forward(self.robot_model, self.robot_data)
+        with self.profiler.time_section("mj_forward"):
+            mujoco.mj_forward(self.robot_model, self.robot_data)
+        self.profiler.increment_counter("mj_forward_calls", 1)
 
         # 2) World point (3,1) for mj_jac
         R_WB = self.robot_data.xmat[body_idx].reshape(3, 3)
@@ -1073,7 +1119,9 @@ class InteractionMeshRetargeter:
         q_mujoco = q.copy()
         self.robot_data.qpos[:] = q_mujoco
 
-        mujoco.mj_forward(self.robot_model, self.robot_data)
+        with self.profiler.time_section("mj_forward"):
+            mujoco.mj_forward(self.robot_model, self.robot_data)
+        self.profiler.increment_counter("mj_forward_calls", 1)
 
         for name, link_name in links.items():
             body_id = mujoco.mj_name2id(self.robot_model, mujoco.mjtObj.mjOBJ_BODY, link_name)
@@ -1111,7 +1159,9 @@ class InteractionMeshRetargeter:
         else:
             self.robot_data.qpos = mujoco_q
         # Forward kinematics to update all positions
-        mujoco.mj_forward(self.robot_model, self.robot_data)
+        with self.profiler.time_section("mj_forward"):
+            mujoco.mj_forward(self.robot_model, self.robot_data)
+        self.profiler.increment_counter("mj_forward_calls", 1)
 
         robot_link_positions = []
 

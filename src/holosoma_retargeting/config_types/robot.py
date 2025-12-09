@@ -18,6 +18,10 @@ class RobotDefaults(TypedDict):
 _ROBOT_DEFAULTS: dict[str, RobotDefaults] = {
     "g1": {"robot_dof": 29, "robot_height": 1.32, "object_name": "ground"},
     "t1": {"robot_dof": 23, "robot_height": 1.2, "object_name": "ground"},
+    # TODO: Add your new robot configuration here
+    # Example:
+    "adam_sp": {"robot_dof": 29, "robot_height": 1.67, "object_name": "ground"},
+    # Replace "new_robot" with your robot type name, and fill in the actual values
 }
 
 
@@ -40,7 +44,7 @@ class RobotConfig:
     """
 
     # Robot type selector - determines which defaults to use
-    robot_type: Literal["g1", "t1"] = "g1"
+    robot_type: Literal["g1", "t1","adam_sp"] = "g1"  
 
     # Robot configuration (optional overrides)
     robot_dof: int | None = None
@@ -97,7 +101,13 @@ class RobotConfig:
     )
 
     def _robot_urdf_file(self) -> str:
-        """Get robot URDF file path."""
+        """Get robot URDF file path.
+        
+        URDF file path convention:
+        - Default: models/{robot_type}/{robot_type}_{dof}dof.urdf
+        - Can be overridden via robot_urdf_file parameter
+        - Ensure the URDF file exists and is accessible from the working directory
+        """
         if self.robot_urdf_file is not None:
             return self.robot_urdf_file
         return f"models/{self.robot_type}/{self.robot_type}_{self.ROBOT_DOF}dof.urdf"
@@ -132,6 +142,16 @@ class RobotConfig:
                 "right_foot_sphere_4_link",
                 "left_foot_sphere_5_link",
                 "right_foot_sphere_5_link",
+            ]
+        # TODO: Add foot sticking links for your new robot
+        # Example:
+        if self.robot_type == "adam_sp":
+            return [
+                "toeTipLeft",
+                "toeTipRight",
+                "toeLeft",
+                "toeRight",
+                # ... add all foot contact links from your URDF
             ]
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
@@ -202,6 +222,12 @@ class RobotConfig:
                     "35": -0.05,
                 }
             )
+        # TODO: Add manual lower bounds for your new robot if needed
+        # Example:
+        # elif self.robot_type == "new_robot":
+        #     base.update({
+        #         "XX": -value,  # joint index: limit value
+        #     })
 
         return base
 
@@ -228,6 +254,12 @@ class RobotConfig:
                     "35": 0.05,
                 }
             )
+        # TODO: Add manual upper bounds for your new robot if needed
+        # Example:
+        # elif self.robot_type == "new_robot":
+        #     base.update({
+        #         "XX": value,  # joint index: limit value
+        #     })
 
         return base
 
@@ -240,6 +272,10 @@ class RobotConfig:
 
         if self.robot_type == "g1":
             return {"19": 0.2, "20": 0.2}  # waist yaw, waist roll
+        # TODO: Add manual cost weights for your new robot if needed
+        # Example:
+        # if self.robot_type == "new_robot":
+        #     return {"XX": weight, "YY": weight}  # joint index: cost weight
         return {}
 
     MANUAL_COST = property(_manual_cost, doc="Get manual cost weights.")
@@ -253,6 +289,12 @@ class RobotConfig:
             return np.arange(19)
         if self.robot_type == "t1":
             return np.concatenate([np.arange(7), np.arange(11, 23)])
+        # TODO: Add nominal tracking indices for your new robot
+        # These are the joint indices that should track a nominal trajectory
+        # Example:
+        if self.robot_type == "adam_sp":
+            return np.arange(19)
+        #     return np.arange(XX)  # or np.concatenate([np.arange(X), np.arange(Y, Z)])
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
     NOMINAL_TRACKING_INDICES = property(
