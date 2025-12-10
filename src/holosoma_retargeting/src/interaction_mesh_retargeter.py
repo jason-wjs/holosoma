@@ -668,7 +668,7 @@ class InteractionMeshRetargeter:
 
             problem = cp.Problem(cp.Minimize(cp.sum(obj_terms)), constraints)
             self.profiler.increment_counter("total_constraints", len(constraints))
-
+        ## test 1
         # -------- Solve with Clarabel --------
         with self.profiler.time_section("4.6_solve_qp"):
             solver_kwargs = {
