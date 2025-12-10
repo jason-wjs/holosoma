@@ -7,14 +7,14 @@ This repository provides tools for retargeting human motion data to humanoid rob
 ## Single Sequence Motion Retargeting
 
 ```bash
-# Robot-only (OMOMO)
-python examples/robot_retarget.py --data_path demo_data/OMOMO_new --task-type robot_only --task-name sub3_largebox_003 --data_format smplh --retargeter.debug --retargeter.visualize
+# Robot-only (OMOMO) on ADAM-SP
+python examples/robot_retarget.py --data_path demo_data/OMOMO_new --task-type robot_only --task-name sub3_largebox_003 --data_format smplh --retargeter.debug --retargeter.visualize --robot adam_sp
 
-# Object interaction (OMOMO)
-python examples/robot_retarget.py --data_path demo_data/OMOMO_new --task-type object_interaction --task-name sub3_largebox_003 --data_format smplh --retargeter.debug --retargeter.visualize
+# Object interaction (OMOMO) on ADAM-SP
+python examples/robot_retarget.py --data_path demo_data/OMOMO_new --task-type object_interaction --task-name sub3_largebox_003 --data_format smplh --robot adam_sp --retargeter.debug --retargeter.visualize
 
-# Climbing
-python examples/robot_retarget.py --data_path demo_data/climb --task-type climbing --task-name mocap_climb_seq_0 --data_format mocap --robot-config.robot-urdf-file models/g1/g1_29dof_spherehand.urdf --retargeter.debug --retargeter.visualize
+# Climbing on ADAM-SP
+python examples/robot_retarget.py --data_path demo_data/climb --task-type climbing --task-name mocap_climb_seq_0 --data_format mocap --robot adam_sp --robot-config.robot-urdf-file models/adam_sp/adam_sp_29dof_spherehand.urdf --retargeter.debug --retargeter.visualize
 ```
 
 **Note**: Add `--augmentation` to run sequences with augmentation. You must first run the original sequence before adding augmentation.
@@ -22,14 +22,14 @@ python examples/robot_retarget.py --data_path demo_data/climb --task-type climbi
 ## Batch Processing for Motion Retargeting
 
 ```bash
-# Robot-only (OMOMO)
-python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new --task-type robot_only --data_format smplh --save_dir demo_results_parallel/g1/robot_only/omomo --task-config.object-name ground
+# Robot-only (OMOMO) on ADAM-SP
+python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new --task-type robot_only --data_format smplh --save_dir demo_results_parallel/g1/robot_only/omomo --task-config.object-name ground --robot adam_sp
 
-# Object interaction (OMOMO)
-python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new --task-type object_interaction --data_format smplh --save_dir demo_results_parallel/g1/object_interaction/omomo --task-config.object-name largebox
+# Object interaction (OMOMO) on ADAM-SP
+python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new --task-type object_interaction --data_format smplh --save_dir demo_results_parallel/adam_sp/object_interaction/omomo --task-config.object-name largebox --robot adam_sp
 
-# Climbing
-python examples/parallel_robot_retarget.py --data-dir demo_data/climb --task-type climbing --data_format mocap --robot-config.robot-urdf-file models/g1/g1_29dof_spherehand.urdf --task-config.object-name multi_boxes --save_dir demo_results_parallel/g1/climbing/mocap_climb
+# Climbing on ADAM-SP
+python examples/parallel_robot_retarget.py --data-dir demo_data/climb --task-type climbing --data_format mocap --task-config.object-name multi_boxes --save_dir demo_results_parallel/adam_sp/climbing/mocap_climb --robot adam_sp --robot-config.robot-urdf-file models/adam_sp/adam_sp_29dof_spherehand.urdf
 ```
 
 **Note**: Add `--augmentation` to run original sequences and sequences with augmentation (for object interaction and climbing tasks).

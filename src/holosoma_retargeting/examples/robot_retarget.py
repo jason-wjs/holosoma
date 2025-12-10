@@ -36,6 +36,7 @@ from holosoma_retargeting.src.utils import (  # noqa: E402
     create_scaled_multi_boxes_urdf,
     create_scaled_multi_boxes_xml,
     estimate_human_orientation,
+    ensure_climbing_scene_xml,
     extract_foot_sticking_sequence_velocity,
     extract_object_first_moving_frame,
     load_intermimic_data,
@@ -399,6 +400,8 @@ def setup_object_data(
         box_asset_xml = object_dir / "box_assets.xml"
         scene_xml_name = Path(constants.ROBOT_URDF_FILE).name.replace(".urdf", f"_w_{constants.OBJECT_NAME}.xml")
         scene_xml_file = object_dir / scene_xml_name
+        base_robot_xml = Path(constants.ROBOT_URDF_FILE).with_suffix(".xml")
+        ensure_climbing_scene_xml(str(base_robot_xml), object_dir, scene_xml_file)
         # Set SCENE_XML_FILE in constants BEFORE creating retargeter (needed for temp_retargeter)
         constants.SCENE_XML_FILE = str(scene_xml_file)
 
@@ -689,7 +692,20 @@ def main(cfg: RetargetingConfig) -> None:
 
     # Ensure configs match top-level selections
     if cfg.robot_config.robot_type != robot:
-        cfg.robot_config = RobotConfig(robot_type=robot)
+        # Preserve user overrides (e.g., custom URDF) while aligning robot_type
+        cfg.robot_config = RobotConfig(
+            robot_type=robot,
+            robot_dof=cfg.robot_config.robot_dof,
+            robot_height=cfg.robot_config.robot_height,
+            robot_name=cfg.robot_config.robot_name,
+            robot_urdf_file=cfg.robot_config.robot_urdf_file,
+            foot_sticking_links=cfg.robot_config.foot_sticking_links,
+            q_a_standing=cfg.robot_config.q_a_standing,
+            manual_lb=cfg.robot_config.manual_lb,
+            manual_ub=cfg.robot_config.manual_ub,
+            manual_cost=cfg.robot_config.manual_cost,
+            nominal_tracking_indices=cfg.robot_config.nominal_tracking_indices,
+        )
 
     if cfg.motion_data_config.robot_type != robot or cfg.motion_data_config.data_format != data_format:
         cfg.motion_data_config = MotionDataConfig(data_format=data_format, robot_type=robot)
