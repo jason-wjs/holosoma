@@ -298,6 +298,7 @@ JOINTS_MAPPINGS = {
         "LeftToeBase": "toeTipLeft",
         "RightToeBase": "toeTipRight",
     },
+
 }
 
 # Data format specific constants

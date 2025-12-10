@@ -61,6 +61,7 @@ class InteractionMeshRetargeter:
         nominal_tracking_tau: float = 10.0,
         n_first_iter: int = 25,
         n_subsequent_iter: int = 5,
+        smooth_weight: float = 0.1,
     ):
         """This kinematic retargeter solves the diffIK problem with hard constraints in SQP style.
         During each SQP iteration, the problem is solved with the following constraints and costs:
@@ -104,7 +105,7 @@ class InteractionMeshRetargeter:
 
         # Setup weights and parameters
         self.laplacian_weights = 10
-        self.smooth_weight = 0.2
+        self._weight = 0.2
         # Tolerance for foot sticking constraints in x, y.
         self.foot_sticking_tolerance = foot_sticking_tolerance
 
@@ -177,6 +178,7 @@ class InteractionMeshRetargeter:
         self.track_nominal_indices = task_constants.NOMINAL_TRACKING_INDICES
         self.n_first_iter = n_first_iter
         self.n_subsequent_iter = n_subsequent_iter
+        self.smooth_weight = smooth_weight
         # 性能分析器
         self.profiler = PerformanceProfiler(enabled=debug)  # 仅在 debug 模式启用
 
@@ -602,11 +604,11 @@ class InteractionMeshRetargeter:
                     p_lb = p_WF_t_last_dict[key] - p_WF_dict[key] - self.foot_sticking_tolerance
                     p_ub = p_lb + 2 * self.foot_sticking_tolerance  # symmetric window
 
-                        Jxy = J_WF[:2, self.q_a_indices]  # (2 x nq_act)
-                        constraints += [
-                            Jxy @ dqa >= p_lb[:2],
-                            Jxy @ dqa <= p_ub[:2],
-                        ]
+                    Jxy = J_WF[:2, self.q_a_indices]  # (2 x nq_act)
+                    constraints += [
+                        Jxy @ dqa >= p_lb[:2],
+                        Jxy @ dqa <= p_ub[:2],
+                    ]
         
         # Non-penetration constraints
         with self.profiler.time_section("4.4_collision_detection"):

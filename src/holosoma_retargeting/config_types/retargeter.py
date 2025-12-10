@@ -49,7 +49,10 @@ class RetargeterConfig:
 
     nominal_tracking_tau: float = 1e6
     """Time constant for the nominal tracking cost."""
-    n_first_iter: int = 25
+    n_first_iter: int = 50
     """Number of iterations for the first frame."""
-    n_subsequent_iter: int = 5
+    n_subsequent_iter: int = 10
     """Number of iterations for the subsequent frames."""
+    
+    smooth_weight: float = 0.1
+    """Weight for smoothness cost term. Can be a scalar or a vector/matrix for per-joint weighting."""

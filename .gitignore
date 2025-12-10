@@ -19,6 +19,8 @@ logs_eval
 # Isaacsim Converted Files
 src/holosoma/holosoma/data/robots/converted/
 src/holosoma/holosoma/data/robots/converted_rank*/
+src/holosoma_retargeting/data_utils/lafan1
+src/holosoma_retargeting/data_utils/lafan
 
 # other
 *.egg-info
