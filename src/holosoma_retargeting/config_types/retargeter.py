@@ -54,5 +54,5 @@ class RetargeterConfig:
     n_subsequent_iter: int = 10
     """Number of iterations for the subsequent frames."""
     
-    smooth_weight: float = 0.1
+    smooth_weight: float = 0.2
     """Weight for smoothness cost term. Can be a scalar or a vector/matrix for per-joint weighting."""

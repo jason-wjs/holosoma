@@ -61,7 +61,7 @@ class InteractionMeshRetargeter:
         nominal_tracking_tau: float = 10.0,
         n_first_iter: int = 25,
         n_subsequent_iter: int = 5,
-        smooth_weight: float = 0.1,
+        smooth_weight: float = 0.2,
     ):
         """This kinematic retargeter solves the diffIK problem with hard constraints in SQP style.
         During each SQP iteration, the problem is solved with the following constraints and costs:
