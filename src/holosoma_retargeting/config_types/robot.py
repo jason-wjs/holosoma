@@ -307,17 +307,13 @@ class RobotConfig:
         if self.robot_type == "adam_sp":
             ## add manual cost for foot and toe
             return {
-                "8": 1.0,  # hipRoll_Left
-                "9": 0.5,  # hipYaw_Left
-                # "11": 0.1,  # anklePitch_Left
-                # "12": 0.1,  # ankleRoll_Left
-                "14": 1.0,  # hipRoll_Right
-                "15": 0.5,  # hipYaw_Right
-                # "17": 0.1,  # anklePitch_Right
-                # "18": 0.1,  # ankleRoll_Right
-                "19": 0.5,  # waistRoll
-                "20": 0.5,  # waistPitch
-                "21": 0.5,  # waistYaw
+                "1": 1.0,  # hipRoll_Left
+                "2": 0.5,  # hipYaw_Left
+                "7": 1.0,  # hipRoll_Right
+                "8": 0.5,  # hipYaw_Right
+                "12": 0.5,  # waistRoll
+                "13": 0.5,  # waistPitch
+                "14": 0.5,  # waistYaw
             }
         return {}
 
@@ -333,7 +329,7 @@ class RobotConfig:
         if self.robot_type == "t1":
             return np.concatenate([np.arange(7), np.arange(11, 23)])
         if self.robot_type == "adam_sp":
-            return np.arange(19)  #
+            return np.arange(15)  # leg(12) an waist(3) joints for ADAM_SP
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
     NOMINAL_TRACKING_INDICES = property(
