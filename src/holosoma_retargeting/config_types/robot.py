@@ -288,13 +288,13 @@ class RobotConfig:
             return {"19": 0.2, "20": 0.2}  # waist yaw, waist roll
         if self.robot_type == "adam_sp":
             return {
-                "1": 1.0,  # hipRoll_Left
-                "2": 0.5,  # hipYaw_Left
-                "7": 1.0,  # hipRoll_Right
-                "8": 0.5,  # hipYaw_Right
-                "12": 0.5,  # waistRoll
-                "13": 0.5,  # waistPitch
-                "14": 0.5,  # waistYaw
+                "8": 1.0,  # hipRoll_Left
+                "9": 0.5,  # hipYaw_Left
+                "14": 1.0,  # hipRoll_Right
+                "15": 0.5,  # hipYaw_Right
+                "19": 0.5,  # waistRoll
+                "20": 0.5,  # waistPitch
+                "21": 0.5,  # waistYaw
             }
         return {}
 
