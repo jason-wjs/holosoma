@@ -164,14 +164,14 @@
                 <geom class="visual" mesh="toeRight" material="silver" />
                 <geom class="collision" name="toeRight_collision" mesh="toeRight" />
                 <body name="toeTipRight" pos="0.17 0 0">
-                  <inertial pos="0 0 0" mass="0.01" diaginertia="1e-6 1e-6 1e-6" />
-                  <geom type="sphere" size="0.01" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
+                  <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                  <geom type="sphere" size="0.005" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
                 </body>
                 <body name="heelPadRight" pos="-0.06 0 0">
-                  <geom type="sphere" size="0.02" rgba="0.8 0.3 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  <geom type="sphere" size="0.005" rgba="0.8 0.3 0.3 0.5" group="1" contype="1" conaffinity="1" />
                 </body>
                 <body name="midfootPadRight" pos="0.05 0 0">
-                  <geom type="sphere" size="0.02" rgba="0.3 0.8 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  <geom type="sphere" size="0.005" rgba="0.3 0.8 0.3 0.5" group="1" contype="1" conaffinity="1" />
                 </body>
                 </body>
               </body>

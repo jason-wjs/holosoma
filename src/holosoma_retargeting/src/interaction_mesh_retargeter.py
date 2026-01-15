@@ -166,13 +166,14 @@ class InteractionMeshRetargeter:
         self.q_a_ub[np.array(list(self.task_constants.MANUAL_UB.keys())).astype(int)] = list(
             self.task_constants.MANUAL_UB.values()
         )
-
+        print("q_a_lb:", self.q_a_lb)
+        print("q_a_ub:", self.q_a_ub)
         # Prevent too much waist twist
-        self.Q_diag = np.zeros(self.nq_a) * 1e-3
+        self.Q_diag = np.ones(self.nq_a) * 1e-3
         self.Q_diag[np.array(list(self.task_constants.MANUAL_COST.keys())).astype(int)] = list(
             self.task_constants.MANUAL_COST.values()
         )
-
+        
         self.w_nominal_tracking_init = w_nominal_tracking_init
         self.nominal_tracking_tau = nominal_tracking_tau
         self.track_nominal_indices = task_constants.NOMINAL_TRACKING_INDICES
@@ -432,6 +433,7 @@ class InteractionMeshRetargeter:
                     self.draw_q(q)
                 frame_time[i] = time.perf_counter() - frame_start_time
                 self.profiler.record_value("total_frame_time", frame_time[i])
+                self.profiler.record_value("cost", cost)
                 # print(f"Frame {i+1}/{num_frames}: {frame_time*1000:.2f} ms (cost: {cost:.6f})")
                 pbar.set_postfix(cost=cost, time=f"{frame_time[i]*1000:.1f}ms")
         
@@ -581,20 +583,19 @@ class InteractionMeshRetargeter:
         # Linear equality
         constraints += [cp.Constant(J_L[:, self.q_a_indices]) @ dqa - lap_var == -lap0_vec]
 
-        # Foot sticking
-        with self.profiler.time_section("4.3_foot_sticking_constraints"):
-            if (self.q_a_init_idx < 12) and self.activate_foot_sticking:
-                J_WF_dict, p_WF_dict, _ = self._calc_manipulator_jacobians(q, links=self.foot_links, obj_frame=False)
-                _, p_WF_t_last_dict, _ = self._calc_manipulator_jacobians(q_t_last, links=self.foot_links, obj_frame=False)
-                # Identify 'left' and 'right' flags from provided keys
-                left_key = right_key = None
-                for key in foot_sticking:
-                    if key.lower().startswith("l"):
-                        left_key = key
-                    elif key.lower().startswith("r"):
-                        right_key = key
-                if left_key is None or right_key is None:
-                    raise ValueError("foot_sticking must include one left* and one right* key")
+        # foot sticking constraints
+        if (self.q_a_init_idx < 12) and self.activate_foot_sticking:
+            J_WF_dict, p_WF_dict, _ = self._calc_manipulator_jacobians(q, links=self.foot_links, obj_frame=False)
+            _, p_WF_t_last_dict, _ = self._calc_manipulator_jacobians(q_t_last, links=self.foot_links, obj_frame=False)
+            # Identify 'left' and 'right' flags from provided keys
+            left_key = right_key = None
+            for key in foot_sticking:
+                if key.lower().startswith("l"):
+                    left_key = key
+                elif key.lower().startswith("r"):
+                    right_key = key
+            if left_key is None or right_key is None:
+                raise ValueError("foot_sticking must include one left* and one right* key")
 
             for key, J_WF in J_WF_dict.items():
                 key_lower = key.lower()
@@ -615,17 +616,13 @@ class InteractionMeshRetargeter:
             Js, phis = self._update_jacobians_and_phis_from_q(q)
             self.profiler.increment_counter("collision_pairs_detected", len(phis))
             
-            if self.activate_obj_non_penetration and len(phis) > self.max_penetration_constraints:  # 如果约束太多，只保留最紧急的
-                    sorted_phis = sorted(phis.items(), key=lambda x: x[1])
-                    phis = dict(sorted_phis[:self.max_penetration_constraints])  # 只保留前10个最紧急的
-                    Js = {k: Js[k] for k in phis.keys()}
-                    self.profiler.increment_counter("collision_pairs_filtered", len(phis))
+            if self.activate_obj_non_penetration and len(phis) > 0:
 
-        for key, phi in phis.items():
-            Ja_n_full = Js[key]
-            Ja_n = Ja_n_full[self.q_a_indices]
-            rhs = -phi - self.penetration_tolerance
-            constraints += [Ja_n @ dqa >= rhs]
+                for key, phi in phis.items():
+                    Ja_n_full = Js[key]
+                    Ja_n = Ja_n_full[self.q_a_indices]
+                    rhs = -phi - self.penetration_tolerance
+                    constraints += [Ja_n @ dqa >= rhs]
 
         # Joint limits constraints (actuated)
         if self.activate_joint_limits:

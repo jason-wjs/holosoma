@@ -17,10 +17,10 @@ class DataConversionConfig:
     input_file: str
     """Path to input motion file."""
 
-    robot: Literal["g1", "t1"] = "g1"
+    robot: Literal["g1", "t1", "adam_sp"] = "g1"
     """Robot model to use."""
 
-    data_format: Literal["lafan", "smplh", "mocap"] = "smplh"
+    data_format: Literal["lafan", "smplh", "mocap", "bvh"] = "smplh"
     """Motion data format."""
 
     object_name: str | None = None

@@ -580,9 +580,41 @@ def run_simulator(joint_names: list[str]):
 
 def main():
     """Main function."""
-    # Run the simulator
-    run_simulator(
-        joint_names=[
+    # 根据机器人类型选择关节名称列表
+    if args_cli.robot == "adam_sp":
+        joint_names = [
+            "hipPitch_Left",
+            "hipRoll_Left",
+            "hipYaw_Left",
+            "kneePitch_Left",
+            "anklePitch_Left",
+            "ankleRoll_Left",
+            "hipPitch_Right",
+            "hipRoll_Right",
+            "hipYaw_Right",
+            "kneePitch_Right",
+            "anklePitch_Right",
+            "ankleRoll_Right",
+            "waistRoll",
+            "waistPitch",
+            "waistYaw",
+            "shoulderPitch_Left",
+            "shoulderRoll_Left",
+            "shoulderYaw_Left",
+            "elbow_Left",
+            "wristYaw_Left",
+            "wristPitch_Left",
+            "wristRoll_Left",
+            "shoulderPitch_Right",
+            "shoulderRoll_Right",
+            "shoulderYaw_Right",
+            "elbow_Right",
+            "wristYaw_Right",
+            "wristPitch_Right",
+            "wristRoll_Right",
+        ]
+    elif args_cli.robot == "g1":
+        joint_names = [
             "left_hip_pitch_joint",
             "left_hip_roll_joint",
             "left_hip_yaw_joint",
@@ -612,10 +644,13 @@ def main():
             "right_wrist_roll_joint",
             "right_wrist_pitch_joint",
             "right_wrist_yaw_joint",
-        ],
-    )
+        ]
+    else:
+        # 默认回退到原来的列表或报错
+        raise ValueError(f"Unsupported robot type for joint mapping: {args_cli.robot}")
 
-
+    # Run the simulator
+    run_simulator(joint_names=joint_names)
 if __name__ == "__main__":
     # run the main function
     main()

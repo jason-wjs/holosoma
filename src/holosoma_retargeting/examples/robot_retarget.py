@@ -40,6 +40,7 @@ from holosoma_retargeting.src.utils import (  # noqa: E402
     extract_foot_sticking_sequence_velocity,
     extract_object_first_moving_frame,
     load_intermimic_data,
+    load_bvh_data,
     load_object_data,
     preprocess_motion_data,
     transform_from_human_to_world,
@@ -148,6 +149,15 @@ def filter_joints_mapping_for_legs_only(
             "LeftFoot": "anklePitchLeft",
             "RightFoot": "anklePitchRight",
         },
+        ("bvh",'adam_sp'): {
+            "Hips": "pelvis",
+            "LeftUpLeg": "thighLeft",
+            "RightUpLeg": "thighRight",
+            "LeftLeg": "shinLeft",
+            "RightLeg": "shinRight",
+            "LeftFoot": "toeLeft",
+            "RightFoot": "toeRight",
+        },
     }
     
     leg_joints = leg_joint_names.get((data_format, robot_type), set())
@@ -236,8 +246,8 @@ def validate_config(cfg: RetargetingConfig) -> None:
         raise ValueError("Climbing task requires 'mocap' data format")
     if cfg.task_type == "object_interaction" and cfg.data_format not in (None, "smplh"):
         raise ValueError("Object interaction requires 'smplh' data format")
-    if cfg.task_type == "robot_only" and cfg.data_format not in (None, "lafan", "smplh", "mocap"):
-        raise ValueError("Robot-only task requires 'lafan' or 'smplh' or 'mocap' data format")
+    if cfg.task_type == "robot_only" and cfg.data_format not in (None, "lafan", "smplh", "mocap", "bvh"):
+        raise ValueError("Robot-only task requires 'lafan' or 'smplh' or 'mocap' or 'bvh' data format")
 
 
 def create_ground_points(x_range: tuple[float, float], y_range: tuple[float, float], size: int) -> np.ndarray:
@@ -297,7 +307,8 @@ def load_motion_data(
             spine_joint_idx = constants.DEMO_JOINTS.index("Spine1")
             # LAFAN-specific spine adjustment
             human_joints[:, spine_joint_idx, -1] -= 0.06
-            smpl_scale = motion_data_config.default_scale_factor or 1.0
+
+            smpl_scale = constants.ROBOT_HEIGHT / 1.78
         elif data_format == "smplh":  # smplh
             pt_path = data_path / f"{task_name}.pt"
             if not pt_path.exists():
@@ -314,6 +325,21 @@ def load_motion_data(
             human_joints = np.load(str(npy_file))[::downsample]
 
             default_human_height = motion_data_config.default_human_height or 1.78
+            smpl_scale = constants.ROBOT_HEIGHT / default_human_height
+        elif data_format == "bvh":
+            bvh_file = data_path / f"{task_name}.bvh"
+            if not bvh_file.exists():
+                # Try finding in subdirectories
+                bvh_files = list(data_path.glob(f"**/{task_name}.bvh"))
+                if bvh_files:
+                    bvh_file = bvh_files[0]
+                else:
+                    raise FileNotFoundError(f"BVH data file not found: {bvh_file}")
+
+            human_joints, _ = load_bvh_data(str(bvh_file))
+            human_joints = human_joints[0::4]
+
+            default_human_height = 1.65
             smpl_scale = constants.ROBOT_HEIGHT / default_human_height
 
         # Create dummy object poses for robot_only

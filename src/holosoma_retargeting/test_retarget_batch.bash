@@ -1,53 +1,28 @@
 conda activate hsretargeting
-## for adam_sp lafan default urdf path is models/adam_sp/adam_sp_29dof.urdf
-# python examples/parallel_robot_retarget.py \
-# --data-dir demo_data/lafan \
-# --task-type robot_only \
-# --data_format lafan \
-# --save_dir demo_results_parallel/adam_sp/robot_only/lafan \
-# --task-config.object-name ground \
-# --task-config.ground-range -10 10 \
-# --retargeter.foot-sticking-tolerance 0.02 \
-# --robot adam_sp \
-## for adam_sp bvh default urdf path is models/adam_sp/adam_sp_29dof.urdf
-python examples/robot_retarget.py \
---data_path demo_data/OMOMO_new \
+## for adam_sp default urdf path is models/adam_sp/adam_sp_29dof.urdf
+python examples/parallel_robot_retarget.py \
+--data-dir demo_data/converted_0110 \
 --task-type robot_only \
---task-name "sub3_largebox_003" \
---data_format smplh \
+--data_format bvh \
+--save_dir demo_results_parallel/adam_sp/robot_only/bvh_0110 \
+--task-config.object-name ground \
+--task-config.ground-range -10 10 \
+--retargeter.foot-sticking-tolerance 0.02 \
 --robot adam_sp \
---save_dir demo_results/adam_sp/robot_only/smplh \
---retargeter.n-first-iter 50 \
---retargeter.n-subsequent-iter 5 \
---retargeter.smooth-weight 0.2 \
---retargeter.debug \
---retargeter.visualize \
---retargeter.step-size 0.2 \
-# --retargeter.no-activate-foot-sticking
-# --retargeter.no-activate-obj-non-penetration \ # deactivate obj non penetration
-# --retargeter.no-activate-foot-sticking \ # deactivate foot sticking
-# --retargeter.no-activate-joint-limits \ # deactivate joint limits
-
-## for g1 default urdf path is models/g1/g1_29dof.urdf
+--max-workers 8
 # python examples/robot_retarget.py \
-# --data_path demo_data/converted_bvh \
+# --data_path demo_data/converted_0110 \
 # --task-type robot_only \
-# --task-name "gym_022" \
+# --task-name "balance_001_Skeleton 006_z_up_x_forward_gym" \
 # --data_format bvh \
 # --robot adam_sp \
-# --save_dir demo_results/g1/robot_only/converted_bvh \
+# --robot-config.robot-urdf-file models/adam_sp/adam_sp_29dof.urdf \
+# --save_dir demo_results/adam_sp/robot_only/bvh_0110 \
+# --retargeter.foot-sticking-tolerance 0.02 \
 # --retargeter.n-first-iter 25 \
-# --retargeter.n-subsequent-iter 1 \
-# --retargeter.smooth-weight 2.0 \
+# --retargeter.n-subsequent-iter 5 \
 # --retargeter.debug \
 # --retargeter.visualize \
-# --retargeter.step-size 0.1 \
-
-
-# --retargeter.no-activate-obj-non-penetration \
-# --retargeter.visualize \
-# --retargeter.no-debug \
-# --retargeter.no-activate-joint-limits \
 # python examples/robot_retarget.py \
 # --data_path demo_data/lafan \
 # --task-type robot_only \

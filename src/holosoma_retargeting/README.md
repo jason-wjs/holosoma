@@ -3,9 +3,66 @@
 This repository provides tools for retargeting human motion data to humanoid robots. It supports multiple data formats (smplh, mocap, lafan) and task types including robot-only motion, object interaction, and climbing.
 
 **Data Requirements**: The retargeting pipeline requires motion data in world joint positions. For custom data, you need to prepare world joint positions in shape `(T, J, 3)` where T is the number of frames and J is the number of joints, and modify `demo_joints` and `joints_mapping` defined in `config_types/data_type.py`.
+## conda environment
+```bash
+conda activate  hsretargeting
+```
+## key file
+```bash
+/home/humanoid/yzh/holosoma/src/holosoma_retargeting/config_types/data_type.py # data_type config of retargeting
+```
+JOINTS_MAPPINGS
+```python
+    ("bvh", "adam_sp"): {
+        "Hips": "pelvis",
+        "LeftUpLeg": "thighLeft",
+        "RightUpLeg": "thighRight",
+        "LeftLeg": "shinLeft",
+        "RightLeg": "shinRight",
+        "LeftArm": "shoulderPitchLeft",
+        "RightArm": "shoulderPitchRight",
+        "LeftForeArm": "elbowLeft",
+        "RightForeArm": "elbowRight",
+        "LeftFoot": "toeLeft",
+        "RightFoot": "toeRight",
+        "LeftToeBase": "toeTipLeft",
+        "RightToeBase": "toeTipRight",
+        "LeftHand": "wristRollLeft",
+        "RightHand": "wristRollRight",
+    },
+``` 
+/home/humanoid/yzh/holosoma/src/holosoma_retargeting/examples/robot_retarget.py API of retargeting
 
+
+/home/humanoid/yzh/holosoma/src/holosoma_retargeting/src/interaction_mesh_retargeter.py optimization main file
+
+/home/humanoid/yzh/holosoma/src/holosoma_retargeting/config_types/robot.py manual paramters of cost lower bound and upper bound
+```python
+    def _manual_cost(self) -> dict[str, float]:
+        """Get manual cost weights."""
+        if self.manual_cost is not None:
+            return self.manual_cost
+
+        if self.robot_type == "g1":
+            return {"19": 0.2, "20": 0.2}  # waist roll , waist pitch
+        if self.robot_type == "adam_sp":
+            ## add manual cost for foot and toe
+            return {
+                # "8": 0.1,  # hipRoll_Left
+                # "9": 0.1,  # hipYaw_Left
+                # "11": 0.5, # ankle pitch left
+                # "12": 0.5, # ankle roll left
+                # "17": 0.5, # ankle pitch right
+                # "18": 0.5, # ankle roll right
+                # "14": 0.1,  # hipRoll_Right
+                # "15": 0.1,  # hipYaw_Right
+                "19": 0.2,  # waistRoll
+                "20": 0.2,  # waistPitch
+                "21": 0.2,  # waistYaw
+            }
+        return {}
+``` 
 ## Single Sequence Motion Retargeting
-
 ```bash
 # Robot-only (OMOMO) on ADAM-SP
 python examples/robot_retarget.py --data_path demo_data/OMOMO_new --task-type robot_only --task-name sub3_largebox_003 --data_format smplh --retargeter.debug --retargeter.visualize --robot adam_sp
@@ -138,9 +195,10 @@ mjpython data_conversion/convert_data_format_mj.py --input_file ./demo_results/g
 
 mjpython data_conversion/convert_data_format_mj.py --input_file ./demo_results/g1/object_interaction/omomo/sub3_largebox_003_original.npz --output_fps 50 --output_name converted_res/object_interaction/sub3_largebox_003_mj_w_obj.npz --data_format smplh --object_name "largebox" --has_dynamic_object --once
 ```
-
+我需要另外一个 test 文件，去检测 adam 两个手腕的末端位置 和 bvh中 body 的末端位置之间的偏差，你最好能帮我把BVH original human body 也可视化在viser 中，请你帮我写一个可视化脚本 对比一下。
 ### Robot-Only Setting
-
+```bash
+python data_conversion/convert_data_format_mj.py --input_file demo_results/adam_sp/robot_only/bvh_0110/balance_001_Skeleton_006_z_up_x_forward_gym.npz --output_fps 50 --output_name converted_res/robot_only/adam_sp --data_format bvh  --robot adam_sp --object_name "ground" --once
 ```bash
 python data_conversion/convert_data_format_mj.py --input_file ./demo_results/g1/robot_only/omomo/sub3_largebox_003.npz --output_fps 50 --output_name converted_res/robot_only/sub3_largebox_003_mj_fps50.npz --data_format smplh --object_name "ground" --once
 

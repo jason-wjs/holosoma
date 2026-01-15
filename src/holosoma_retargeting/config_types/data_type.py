@@ -142,6 +142,30 @@ MOCAP_DEMO_JOINTS = [
     "RightFootMod",
 ]
 
+BVH_DEMO_JOINTS = [
+    "Hips",
+    "Spine",
+    "Spine1",
+    "Neck",
+    "Head",
+    "LeftShoulder",
+    "LeftArm",
+    "LeftForeArm",
+    "LeftHand",
+    "RightShoulder",
+    "RightArm",
+    "RightForeArm",
+    "RightHand",
+    "LeftUpLeg",
+    "LeftLeg",
+    "LeftFoot",
+    "LeftToeBase",
+    "RightUpLeg",
+    "RightLeg",
+    "RightFoot",
+    "RightToeBase",
+]
+
 # Joint mappings - organized by (data_format, robot_type)
 JOINTS_MAPPINGS = {
     ("lafan", "g1"): {
@@ -229,6 +253,23 @@ JOINTS_MAPPINGS = {
         "LeftFoot": "left_ankle_intermediate_1_link",
         "RightFoot": "right_ankle_intermediate_1_link",
     },
+    ("bvh", "g1"): {
+        "Spine1": "pelvis_contour_link",
+        "LeftUpLeg": "left_hip_pitch_link",
+        "LeftLeg": "left_knee_link",
+        "LeftToeBase": "left_ankle_roll_sphere_5_link",
+        "RightUpLeg": "right_hip_pitch_link",
+        "RightLeg": "right_knee_link",
+        "RightToeBase": "right_ankle_roll_sphere_5_link",
+        "LeftArm": "left_shoulder_roll_link",
+        "LeftForeArm": "left_elbow_link",
+        "LeftHand": "left_rubber_hand_link",
+        "RightArm": "right_shoulder_roll_link",
+        "RightForeArm": "right_elbow_link",
+        "RightHand": "right_rubber_hand_link",
+        "LeftFoot": "left_ankle_intermediate_1_link",
+        "RightFoot": "right_ankle_intermediate_1_link",
+    },
     ("mocap", "t1"): {
         "Spine1": "Trunk",
         "LeftUpLeg": "Hip_Pitch_Left",
@@ -265,7 +306,7 @@ JOINTS_MAPPINGS = {
     },
     ("smplh", "adam_sp"): {
         "Pelvis": "pelvis",
-        "Chest": "torso",
+        # "Chest": "torso",
         "L_Hip": "thighLeft",
         "R_Hip": "thighRight",
         "L_Knee": "shinLeft",
@@ -274,8 +315,8 @@ JOINTS_MAPPINGS = {
         "R_Shoulder": "shoulderPitchRight",
         "L_Elbow": "elbowLeft",
         "R_Elbow": "elbowRight",
-        "L_Ankle": "toeLeft",
-        "R_Ankle": "toeRight",
+        "L_Ankle": "anklePitchLeft",
+        "R_Ankle": "anklePitchRight",
         "L_Toe": "toeTipLeft",
         "R_Toe": "toeTipRight",
         "L_Wrist": "wristRollLeft",
@@ -293,12 +334,28 @@ JOINTS_MAPPINGS = {
         "RightArm": "shoulderPitchRight",
         "RightForeArm": "elbowRight",
         "RightHand": "right_sphere_hand_link",
-        "LeftFoot": "toeLeft",
-        "RightFoot": "toeRight",
+        "LeftFoot": "anklePitchLeft",
+        "RightFoot": "anklePitchRight",
         "LeftToeBase": "toeTipLeft",
         "RightToeBase": "toeTipRight",
     },
-
+    ("bvh", "adam_sp"): {
+        "Hips": "pelvis",
+        "LeftUpLeg": "thighLeft",
+        "RightUpLeg": "thighRight",
+        "LeftLeg": "shinLeft",
+        "RightLeg": "shinRight",
+        "LeftArm": "shoulderPitchLeft",
+        "RightArm": "shoulderPitchRight",
+        "LeftForeArm": "elbowLeft",
+        "RightForeArm": "elbowRight",
+        "LeftFoot": "anklePitchLeft", #toeLeftKeyframe
+        "RightFoot": "anklePitchRight",  #toeRightKeyframe
+        "LeftToeBase": "toeTipLeft",
+        "RightToeBase": "toeTipRight",
+        "LeftHand": "wristRollLeft",
+        "RightHand": "wristRollRight",
+    },
 }
 
 # Data format specific constants
@@ -306,6 +363,7 @@ TOE_NAMES_BY_FORMAT = {
     "lafan": ["LeftToeBase", "RightToeBase"],
     "smplh": ["L_Toe", "R_Toe"],
     "mocap": ["LeftToeBase", "RightToeBase"],
+    "bvh": ["LeftToeBase", "RightToeBase"],
 }
 
 
@@ -325,6 +383,9 @@ DATA_FORMAT_CONSTANTS: dict[str, FormatConstants] = {
     "mocap": {
         "default_human_height": 1.78,
     },
+    "bvh": {
+        "default_human_height": 1.75,
+    },
 }
 
 
@@ -335,7 +396,7 @@ class MotionDataConfig:
     Uses properties instead of __post_init__ - much simpler!
     """
 
-    data_format: Literal["lafan", "smplh", "mocap"] = "smplh"
+    data_format: Literal["lafan", "smplh", "mocap", "bvh"] = "smplh"
     robot_type: Literal["g1", "t1", "adam_sp"] = "g1"
 
     # Optional overrides - if None, will use defaults from data_format
@@ -352,6 +413,8 @@ class MotionDataConfig:
             return LAFAN_DEMO_JOINTS
         if self.data_format == "smplh":
             return SMPLH_DEMO_JOINTS
+        if self.data_format == "bvh":
+            return BVH_DEMO_JOINTS
         # mocap
         return MOCAP_DEMO_JOINTS
 

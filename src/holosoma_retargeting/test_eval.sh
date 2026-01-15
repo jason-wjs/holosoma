@@ -3,7 +3,7 @@
 # --data_dir demo_data/OMOMO_new/ \
 # --data_type "robot_only"
 python evaluation/eval_retargeting.py \
---res_dir demo_results/adam_sp/robot_only/omomo \
+--res_dir demo_results/adam_sp/robot_only/omomo_test \
 --data_dir demo_data/OMOMO_new \
 --data_type "robot_only" \
 --robot adam_sp \

@@ -21,7 +21,11 @@ src/holosoma/holosoma/data/robots/converted/
 src/holosoma/holosoma/data/robots/converted_rank*/
 src/holosoma_retargeting/data_utils/lafan1
 src/holosoma_retargeting/data_utils/lafan
+src/holosoma_retargeting/demo_data/
+src/holosoma_retargeting/demo_results/
 
+*.sh
+src/holosoma_retargeting/AXIS_SELECTION_GUIDE.md
 # other
 *.egg-info
 __pycache__

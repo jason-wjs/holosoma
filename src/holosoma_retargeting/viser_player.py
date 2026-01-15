@@ -23,6 +23,14 @@ def load_npz(npz_path: str):
     data = np.load(npz_path, allow_pickle=True)
     # expected: qpos [T, ?], and optional fps
     qpos = data["qpos"]
+    print("Ankle pitch positions left and right:", qpos[:,11], qpos[:,17])
+    # print("qpos shape:", qpos.shape)
+    # print("Ankle pitch limits:")
+    # print(min(qpos[:,11]), max(qpos[:,11]))
+    # print(min(qpos[:,17]), max(qpos[:,17]))
+    # print("Ankle roll limits:")
+    # print(min(qpos[:,12]), max(qpos[:,12]))
+    # print(min(qpos[:,18]), max(qpos[:,18]))
     fps = int(data["fps"]) if "fps" in data else 30
     return qpos, fps
 
@@ -61,6 +69,7 @@ def make_player(
 
     # Figure robot DOF from actuated limits in ViserUrdf
     joint_limits = vr.get_actuated_joint_limits()
+    print("Joint limits:", joint_limits)
     robot_dof = len(joint_limits)
 
     # Use fps from config if not provided, otherwise use the one from npz file

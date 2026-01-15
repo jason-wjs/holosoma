@@ -142,14 +142,17 @@ class RobotConfig:
             ]
         if self.robot_type == "adam_sp":
             return [
-                "toeLeft",
-                "toeRight",
+                # "toeLeft",
+                # "toeRight",
                 "toeTipLeft",
                 "toeTipRight",
-                "heelPadLeft",
-                "heelPadRight",
-                "midfootPadLeft",
-                "midfootPadRight",
+                # "heelPadLeft",
+                # "heelPadRight",
+                # "midfootPadLeftInner",
+                # "midfootPadLeftOuter",
+                # "midfootPadRightInner",
+                # "midfootPadRightOuter",
+                # "midfootPadRight",
             ]
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
@@ -256,10 +259,11 @@ class RobotConfig:
             )
         # TODO: Add manual lower bounds for your new robot if needed
         # Example:
-        # elif self.robot_type == "new_robot":
-        #     base.update({
-        #         "XX": -value,  # joint index: limit value
-        #     })
+        elif self.robot_type == "adam_sp":
+            base.update({
+                # "11": -0.45, # ankle pitch left
+                # "17": -0.45, # ankle pitch right
+            })
 
         return base
 
@@ -288,9 +292,9 @@ class RobotConfig:
             )
         # TODO: Add manual upper bounds for your new robot if needed
         # Example:
-        elif self.robot_type == "new_robot":
+        elif self.robot_type == "adam_sp":
             base.update({
-                "XX": 0.1,  # joint index: limit value
+                "20": 0.3,  # waist Pitch
             })
 
         return base
@@ -307,13 +311,17 @@ class RobotConfig:
         if self.robot_type == "adam_sp":
             ## add manual cost for foot and toe
             return {
-                "1": 1.0,  # hipRoll_Left
-                "2": 0.5,  # hipYaw_Left
-                "7": 1.0,  # hipRoll_Right
-                "8": 0.5,  # hipYaw_Right
-                "12": 0.5,  # waistRoll
-                "13": 0.5,  # waistPitch
-                "14": 0.5,  # waistYaw
+                # "8": 0.1,  # hipRoll_Left
+                # "9": 0.1,  # hipYaw_Left
+                # "11": 0.5, # ankle pitch left
+                # "12": 0.5, # ankle roll left
+                # "17": 0.5, # ankle pitch right
+                # "18": 0.5, # ankle roll right
+                # "14": 0.1,  # hipRoll_Right
+                # "15": 0.1,  # hipYaw_Right
+                "19": 0.2,  # waistRoll
+                "20": 0.2,  # waistPitch
+                "21": 0.2,  # waistYaw
             }
         return {}
 
@@ -329,7 +337,7 @@ class RobotConfig:
         if self.robot_type == "t1":
             return np.concatenate([np.arange(7), np.arange(11, 23)])
         if self.robot_type == "adam_sp":
-            return np.arange(15)  # leg(12) an waist(3) joints for ADAM_SP
+            return np.arange(19)  # leg(12) an waist(3) joints for ADAM_SP
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
     NOMINAL_TRACKING_INDICES = property(
