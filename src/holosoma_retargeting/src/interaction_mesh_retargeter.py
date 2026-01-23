@@ -757,7 +757,8 @@ class InteractionMeshRetargeter:
             return None
 
         # Create a sphere mesh using trimesh
-        sphere = trimesh.primitives.Sphere(radius=0.02)
+        # User requested smaller radius (was 0.02)
+        sphere = trimesh.primitives.Sphere(radius=0.01)
         vertices = sphere.vertices
         faces = sphere.faces
 

@@ -23,13 +23,15 @@ def load_npz(npz_path: str):
     data = np.load(npz_path, allow_pickle=True)
     # expected: qpos [T, ?], and optional fps
     qpos = data["qpos"]
-    print("Ankle pitch positions left and right:", qpos[:,11], qpos[:,17])
+    # print("waist pitch and roll positions :", qpos[:,18], qpos[:,19])
     # print("qpos shape:", qpos.shape)
     # print("Ankle pitch limits:")
-    # print(min(qpos[:,11]), max(qpos[:,11]))
-    # print(min(qpos[:,17]), max(qpos[:,17]))
-    # print("Ankle roll limits:")
-    # print(min(qpos[:,12]), max(qpos[:,12]))
+    # print(min(qpos[:,20]), max(qpos[:,20]))
+    # print(min(qpos[:,19]), max(qpos[:,19]))
+    print("hip pitch limits left and right:")
+    print(min(qpos[:,7]), max(qpos[:,13]))
+    print("hip roll limits left and right:")
+    print(min(qpos[:,8]), max(qpos[:,14]))
     # print(min(qpos[:,18]), max(qpos[:,18]))
     fps = int(data["fps"]) if "fps" in data else 30
     return qpos, fps

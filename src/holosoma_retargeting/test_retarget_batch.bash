@@ -1,15 +1,18 @@
-conda activate hsretargeting
+
 ## for adam_sp default urdf path is models/adam_sp/adam_sp_29dof.urdf
 python examples/parallel_robot_retarget.py \
---data-dir demo_data/converted_0110 \
+--data-dir full_bvh_data/converted_1103 \
 --task-type robot_only \
 --data_format bvh \
---save_dir demo_results_parallel/adam_sp/robot_only/bvh_0110 \
+--save_dir demo_results_parallel/adam_sp/robot_only/converted_bvh_full/converted_1103 \
 --task-config.object-name ground \
 --task-config.ground-range -10 10 \
 --retargeter.foot-sticking-tolerance 0.02 \
 --robot adam_sp \
---max-workers 8
+--max-workers 8 \
+--retargeter.n-first-iter 50 \
+--retargeter.n-subsequent-iter 5 \
+--retargeter.smooth-weight 0.2 \
 # python examples/robot_retarget.py \
 # --data_path demo_data/converted_0110 \
 # --task-type robot_only \

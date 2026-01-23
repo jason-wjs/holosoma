@@ -21,7 +21,7 @@ demo_results_parallel/
 demo_data/lafan/
 converted_res/
 data_utils/lafan1
-
+full_bvh_data/
 models/adam_sp/adam_sp_23dof.urdf
 models/adam_sp/adam_sp_23dof.xml
 models/adam_sp/adam_sp_23dof_w_largebox.xml

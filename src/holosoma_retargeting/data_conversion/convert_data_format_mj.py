@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+import pickle
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Tuple, cast
@@ -13,6 +14,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import tyro
+from scipy.spatial.transform import Rotation as R
 
 src_root = Path(__file__).resolve().parents[2]
 if str(src_root) not in sys.path:
@@ -109,6 +111,28 @@ def quat_to_rotvec(q, eps=1e-8):  # axis-angle vector (rotvec), (...,3)
     return axis * angle[..., None]
 
 
+def quat_to_euler_xyz(q):
+    """Convert quaternion [w, x, y, z] to Euler angles [x, y, z] (radians)."""
+    # Scipy expects [x, y, z, w]
+    if isinstance(q, torch.Tensor):
+        q = q.cpu().numpy()
+    
+    # Ensure it's numpy array
+    q = np.asarray(q)
+    
+    # Check shape to handle both single quaternion and batch
+    if q.ndim == 1:
+        # Single quaternion
+        q_scipy = np.array([q[1], q[2], q[3], q[0]])
+        r = R.from_quat(q_scipy)
+        return r.as_euler('xyz', degrees=False)
+    else:
+        # Batch of quaternions
+        q_scipy = np.column_stack([q[:, 1], q[:, 2], q[:, 3], q[:, 0]])
+        r = R.from_quat(q_scipy)
+        return r.as_euler('xyz', degrees=False)
+
+
 class MotionLoader:
     def __init__(
         self,
@@ -134,14 +158,35 @@ class MotionLoader:
         self._interpolate_motion()
         self._compute_velocities()
 
+    def _get_input_fps_from_npz(self, data: Any) -> int:
+        """Derive input FPS from an npz field.
+
+        Historical files may store either:
+        - `fps` as frames-per-second (e.g., 30), or
+        - `fps` as timestep dt (e.g., 1/30).
+        """
+        if "fps" not in data:
+            return self.input_fps
+
+        fps_raw = data["fps"]
+        fps_scalar = float(np.asarray(fps_raw).squeeze())
+        if fps_scalar <= 0:
+            return self.input_fps
+
+        # Heuristic: values < 1.0 are almost certainly dt (seconds per frame).
+        if fps_scalar < 1.0:
+            return int(round(1.0 / fps_scalar))
+
+        return int(round(fps_scalar))
+
     def _load_motion(self):
         """Loads the motion from the csv file."""
         if self.motion_file.endswith(".npz"):
             data = np.load(self.motion_file)
-            self.input_fps = round(1 / data.get("fps", 1 / self.input_fps))
+            self.input_fps = self._get_input_fps_from_npz(data)
             motion = torch.from_numpy(data["qpos"]).to(torch.float32)
         else:
-            raise ValueError("Unsupported motion file format. Use .csv or .npz.")
+            raise ValueError("Unsupported motion file format. Use .npz.")
 
         motion = motion.to(torch.float32).to(self.device)
         if self.use_omniretarget_data:
@@ -347,6 +392,19 @@ def run_simulator(joint_names: list[str]):
     # Load motion
     device = torch.device("cpu")
     has_dynamic_object = args_cli.has_dynamic_object
+    output_format = args_cli.output_format
+
+    # Enforce the BeyondMimic/mjlab spec when requested.
+    output_joint_format = args_cli.output_joint_format
+    include_world_body = args_cli.include_world_body
+    include_names = True
+    if output_format == "bm":
+        if has_dynamic_object:
+            raise ValueError("`--output_format bm` does not support `--has_dynamic_object`.")
+        output_joint_format = "dof"
+        include_world_body = False
+        include_names = False
+
     use_omniretarget_data = args_cli.use_omniretarget_data
     line_range: tuple[int, int] | None = args_cli.line_range
     motion = MotionLoader(
@@ -375,16 +433,19 @@ def run_simulator(joint_names: list[str]):
     )
 
     # Load Mujoco model
-    object_name = constants.OBJECT_NAME
-    robot_model_path = constants.ROBOT_URDF_FILE
-    if object_name == "ground":
-        robot_xml_path = robot_model_path.replace(".urdf", ".xml")
-    elif object_name == "multi_boxes":
-        robot_xml_path = constants.SCENE_XML_FILE
+    if args_cli.robot_xml_path is not None:
+        robot_xml_path = args_cli.robot_xml_path
     else:
-        if object_name is None:
-            raise ValueError("object_name cannot be None when it's not 'ground' or 'multi_boxes'")
-        robot_xml_path = robot_model_path.replace(".urdf", "_w_" + object_name + ".xml")
+        object_name = constants.OBJECT_NAME
+        robot_model_path = constants.ROBOT_URDF_FILE
+        if object_name == "ground":
+            robot_xml_path = robot_model_path.replace(".urdf", ".xml")
+        elif object_name == "multi_boxes":
+            robot_xml_path = constants.SCENE_XML_FILE
+        else:
+            if object_name is None:
+                raise ValueError("object_name cannot be None when it's not 'ground' or 'multi_boxes'")
+            robot_xml_path = robot_model_path.replace(".urdf", "_w_" + object_name + ".xml")
 
     robot = mujoco.MjModel.from_xml_path(robot_xml_path)
     robot_data = mujoco.MjData(robot)
@@ -393,6 +454,7 @@ def run_simulator(joint_names: list[str]):
     # Prepare dof index for mujoco to correctly assign the values from input data
     dof_name_list = []
     for i in range(robot.njnt):  # 'nv' is the number of DoFs
+        print(robot.jnt)
         if robot.jnt_type[i] == mujoco.mjtJoint.mjJNT_FREE:
             continue
         dof_name = mujoco.mj_id2name(robot, mujoco.mjtObj.mjOBJ_JOINT, i)
@@ -402,19 +464,45 @@ def run_simulator(joint_names: list[str]):
     dof_index_list = [joint_names.index(dof_name) for dof_name in dof_name_list]
     print(dof_index_list)
 
-    # Prepare mujoco viewer
-    viewer = mjv.launch_passive(robot, robot_data, show_left_ui=False, show_right_ui=False)
-    viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_PERTFORCE] = 0
-    viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = 0
-    viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = 0
-    viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_COM] = 0
+    # Get body IDs for toeTipLeft and toeTipRight for position tracking
+    toe_tip_left_id = mujoco.mj_name2id(robot, mujoco.mjtObj.mjOBJ_BODY, "toeLeft")
+    toe_tip_right_id = mujoco.mj_name2id(robot, mujoco.mjtObj.mjOBJ_BODY, "toeRight")
+    if toe_tip_left_id == -1 or toe_tip_right_id == -1:
+        print("Warning: Could not find toeTipLeft or toeTipRight body in the model")
+    else:
+        print(f"Found toeTipLeft body ID: {toe_tip_left_id}, toeTipRight body ID: {toe_tip_right_id}")
 
-    viewer.cam.distance = 2.0
-    viewer.cam.elevation = -20.0
-    viewer.cam.azimuth = 45.0
+    # Prepare mujoco viewer
+    viewer = None
+    if not args_cli.headless:
+        viewer = mjv.launch_passive(robot, robot_data, show_left_ui=False, show_right_ui=False)
+        viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_PERTFORCE] = 0
+        viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = 0
+        viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = 0
+        viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_COM] = 0
+
+        viewer.cam.distance = 2.0
+        viewer.cam.elevation = -20.0
+        viewer.cam.azimuth = 45.0
 
     log: dict[str, Any]
-    if has_dynamic_object:
+    if output_format == "bm":
+        log = {
+            "fps": float(args_cli.output_fps),
+            "joint_pos": [],
+            "joint_vel": [],
+            "body_pos_w": [],
+            "body_quat_w": [],
+            "body_lin_vel_w": [],
+            "body_ang_vel_w": [],
+        }
+    elif output_format == "pbhc":
+        log = {
+            "base_position": [],
+            "base_orientation": [],
+            "joint_position": [],
+        }
+    elif has_dynamic_object:
         log = {
             "fps": [args_cli.output_fps],
             "joint_pos": [],
@@ -442,6 +530,7 @@ def run_simulator(joint_names: list[str]):
     # --------------------------------------------------------------------------
 
     # Simulation loop
+    body_slice = slice(None) if include_world_body else slice(1, None)
     while True:
         start_time = time.perf_counter()
         if has_dynamic_object:
@@ -508,44 +597,92 @@ def run_simulator(joint_names: list[str]):
             )
 
         mujoco.mj_forward(robot, robot_data)
-        viewer.sync()
+        
+        # Print toeTip positions in world coordinates to check if feet are floating
+        if toe_tip_left_id != -1 and toe_tip_right_id != -1:
+            toe_tip_left_pos = robot_data.xpos[toe_tip_left_id]
+            toe_tip_right_pos = robot_data.xpos[toe_tip_right_id]
+            # Check if feet are floating (z > 0.01 means floating)
+            left_floating = "FLOATING" if toe_tip_left_pos[2] > 0.01 else "GROUNDED"
+            right_floating = "FLOATING" if toe_tip_right_pos[2] > 0.01 else "GROUNDED"
+            # print(f"Frame {motion.current_idx - 1}: "
+            #       f"toeTipLeft = [{toe_tip_left_pos[0]:.4f}, {toe_tip_left_pos[1]:.4f}, {toe_tip_left_pos[2]:.4f}] ({left_floating}), "
+            #       f"toeTipRight = [{toe_tip_right_pos[0]:.4f}, {toe_tip_right_pos[1]:.4f}, {toe_tip_right_pos[2]:.4f}] ({right_floating})")
+            # print(f"Frame {motion.current_idx - 1}: Both Floating = {left_floating == 'FLOATING' and right_floating == 'FLOATING'}")
+        if viewer is not None:
+            viewer.sync()
 
         end_time = time.perf_counter()
-        time.sleep(max(0, motion.output_dt - (end_time - start_time)))
+        if viewer is not None:
+            time.sleep(max(0, motion.output_dt - (end_time - start_time)))
 
         if not file_saved:
-            lin_vel_w, ang_vel_w = world_body_velocities(robot, robot_data)
-            if has_dynamic_object:
-                log["object_pos_w"].append(robot_data.qpos[-7:-4].copy())
-                log["object_quat_w"].append(robot_data.qpos[-4:].copy())
-                log["object_lin_vel_w"].append(robot_data.qvel[-6:-3].copy())
-                log["object_ang_vel_w"].append(robot_data.qvel[-3:].copy())
-
-                # Remove object field from qpos and qvel
-                log["joint_pos"].append(robot_data.qpos[:-7].copy())
-                log["joint_vel"].append(robot_data.qvel[:-6].copy())
+            if output_format == "pbhc":
+                # Only save base position, base orientation (Euler XYZ), and joint positions
+                log["base_position"].append(robot_data.qpos[:3].copy())
+                # Convert quaternion (w,x,y,z) to Euler XYZ
+                quat = robot_data.qpos[3:7].copy()
+                euler_xyz = quat_to_euler_xyz(quat)
+                log["base_orientation"].append(euler_xyz)
+                dof_count = len(dof_name_list)
+                full_joint_pos = robot_data.qpos[7 : 7 + dof_count].copy()
+                remove_indices = [19, 20, 21, 26, 27, 28]
+                keep_mask = [i for i in range(dof_count) if i not in remove_indices]
+                filtered_joints = full_joint_pos[keep_mask]
+                log["joint_position"].append(filtered_joints)
             else:
-                log["joint_pos"].append(robot_data.qpos[:].copy())
-                log["joint_vel"].append(robot_data.qvel[:].copy())
+                lin_vel_w, ang_vel_w = world_body_velocities(robot, robot_data)
+            
+                if has_dynamic_object and output_format not in ["bm", "pbhc"]:
+                    log["object_pos_w"].append(robot_data.qpos[-7:-4].copy())
+                    log["object_quat_w"].append(robot_data.qpos[-4:].copy())
+                    log["object_lin_vel_w"].append(robot_data.qvel[-6:-3].copy())
+                    log["object_ang_vel_w"].append(robot_data.qvel[-3:].copy())
 
-            log["body_pos_w"].append(robot_data.xpos[:].copy())
-            log["body_quat_w"].append(robot_data.xquat[:].copy())
-            log["body_lin_vel_w"].append(lin_vel_w[:].copy())
-            log["body_ang_vel_w"].append(ang_vel_w[:].copy())
+                    if output_joint_format == "qpos":
+                        # Remove object field from qpos and qvel
+                        log["joint_pos"].append(robot_data.qpos[:-7].copy())
+                        log["joint_vel"].append(robot_data.qvel[:-6].copy())
+                    else:
+                        dof_count = len(dof_name_list)
+                        log["joint_pos"].append(robot_data.qpos[7 : 7 + dof_count].copy())
+                        log["joint_vel"].append(robot_data.qvel[6 : 6 + dof_count].copy())
+                else:
+                    if output_joint_format == "qpos":
+                        log["joint_pos"].append(robot_data.qpos[:].copy())
+                        log["joint_vel"].append(robot_data.qvel[:].copy())
+                    else:
+                        dof_count = len(dof_name_list)
+                        log["joint_pos"].append(robot_data.qpos[7 : 7 + dof_count].copy())
+                        log["joint_vel"].append(robot_data.qvel[6 : 6 + dof_count].copy())
+
+                if output_format not in ["pbhc"]:
+                    log["body_pos_w"].append(robot_data.xpos[body_slice].copy())
+                    log["body_quat_w"].append(robot_data.xquat[body_slice].copy())
+                    log["body_lin_vel_w"].append(lin_vel_w[body_slice].copy())
+                    log["body_ang_vel_w"].append(ang_vel_w[body_slice].copy())
 
         if reset_flag and not file_saved:
             file_saved = True
-            for k in (
-                "joint_pos",
-                "joint_vel",
-                "body_pos_w",
-                "body_quat_w",
-                "body_lin_vel_w",
-                "body_ang_vel_w",
-            ):
+            if output_format == "pbhc":
+                frame_keys = (
+                    "base_position",
+                    "base_orientation",
+                    "joint_position",
+                )
+            else:
+                frame_keys = (
+                    "joint_pos",
+                    "joint_vel",
+                    "body_pos_w",
+                    "body_quat_w",
+                    "body_lin_vel_w",
+                    "body_ang_vel_w",
+                )
+            for k in frame_keys:
                 log[k] = np.stack(log[k], axis=0)[:]
 
-            if has_dynamic_object:
+            if has_dynamic_object and output_format != "bm":
                 for k in (
                     "object_pos_w",
                     "object_quat_w",
@@ -554,67 +691,53 @@ def run_simulator(joint_names: list[str]):
                 ):
                     log[k] = np.stack(log[k], axis=0)[:]
 
-            # Add joint names and body names to the log
-            # Names for qpos/qvel follow joint order
-            joint_names = [mujoco.mj_id2name(robot, mujoco.mjtObj.mjOBJ_JOINT, i) for i in range(robot.njnt)]
-            body_names = [mujoco.mj_id2name(robot, mujoco.mjtObj.mjOBJ_BODY, i) for i in range(robot.nbody)]
+            if include_names:
+                # Names for qpos/qvel follow joint order
+                all_joint_names = [
+                    mujoco.mj_id2name(robot, mujoco.mjtObj.mjOBJ_JOINT, i) for i in range(robot.njnt)
+                ]
+                if has_dynamic_object:
+                    # Remove root free joint name and the object joint name (object is a free joint).
+                    log["joint_names"] = all_joint_names[1:-1]
+                else:
+                    log["joint_names"] = all_joint_names[1:]  # remove the root free joint name
 
-            if has_dynamic_object:
-                log["joint_names"] = joint_names[1:-1]  # remove the root free joint name and the object joint name
-            else:
-                log["joint_names"] = joint_names[1:]  # remove the root free joint name
-
-            log["body_names"] = body_names
+                if include_world_body:
+                    log["body_names"] = [
+                        mujoco.mj_id2name(robot, mujoco.mjtObj.mjOBJ_BODY, i) for i in range(robot.nbody)
+                    ]
+                else:
+                    log["body_names"] = [
+                        mujoco.mj_id2name(robot, mujoco.mjtObj.mjOBJ_BODY, i) for i in range(1, robot.nbody)
+                    ]
 
             if args_cli.output_name is None:
                 raise ValueError("output_name cannot be None")
             output_res_folder = Path(args_cli.output_name).parent
             os.makedirs(output_res_folder, exist_ok=True)
-            np.savez(args_cli.output_name, **log)
+            if output_format == "pbhc":
+                pickle.dump(log, open(args_cli.output_name, "wb"))
+            else:
+                np.savez(args_cli.output_name, **log)
 
         if args_cli.once and file_saved:
             print("[INFO]: Motion replay completed, exiting...")
-            viewer.close()
+            if viewer is not None:
+                viewer.close()
             break
 
 
-def main():
-    """Main function."""
-    # 根据机器人类型选择关节名称列表
-    if args_cli.robot == "adam_sp":
-        joint_names = [
-            "hipPitch_Left",
-            "hipRoll_Left",
-            "hipYaw_Left",
-            "kneePitch_Left",
-            "anklePitch_Left",
-            "ankleRoll_Left",
-            "hipPitch_Right",
-            "hipRoll_Right",
-            "hipYaw_Right",
-            "kneePitch_Right",
-            "anklePitch_Right",
-            "ankleRoll_Right",
-            "waistRoll",
-            "waistPitch",
-            "waistYaw",
-            "shoulderPitch_Left",
-            "shoulderRoll_Left",
-            "shoulderYaw_Left",
-            "elbow_Left",
-            "wristYaw_Left",
-            "wristPitch_Left",
-            "wristRoll_Left",
-            "shoulderPitch_Right",
-            "shoulderRoll_Right",
-            "shoulderYaw_Right",
-            "elbow_Right",
-            "wristYaw_Right",
-            "wristPitch_Right",
-            "wristRoll_Right",
-        ]
-    elif args_cli.robot == "g1":
-        joint_names = [
+def get_joint_names_for_robot(robot_type: str) -> list[str]:
+    """Get the joint name list for a given robot type.
+
+    Args:
+        robot_type: Robot type ("g1", "t1", or "adam_sp").
+
+    Returns:
+        List of joint names in the expected order.
+    """
+    if robot_type == "g1" or robot_type == "t1":
+        return [
             "left_hip_pitch_joint",
             "left_hip_roll_joint",
             "left_hip_yaw_joint",
@@ -645,12 +768,47 @@ def main():
             "right_wrist_pitch_joint",
             "right_wrist_yaw_joint",
         ]
-    else:
-        # 默认回退到原来的列表或报错
-        raise ValueError(f"Unsupported robot type for joint mapping: {args_cli.robot}")
+    if robot_type == "adam_sp":
+        return [
+            "hipPitch_Left",
+            "hipRoll_Left",
+            "hipYaw_Left",
+            "kneePitch_Left",
+            "anklePitch_Left",
+            "ankleRoll_Left",
+            "hipPitch_Right",
+            "hipRoll_Right",
+            "hipYaw_Right",
+            "kneePitch_Right",
+            "anklePitch_Right",
+            "ankleRoll_Right",
+            "waistRoll",
+            "waistPitch",
+            "waistYaw",
+            "shoulderPitch_Left",
+            "shoulderRoll_Left",
+            "shoulderYaw_Left",
+            "elbow_Left",
+            "wristYaw_Left",
+            "wristPitch_Left",
+            "wristRoll_Left",
+            "shoulderPitch_Right",
+            "shoulderRoll_Right",
+            "shoulderYaw_Right",
+            "elbow_Right",
+            "wristYaw_Right",
+            "wristPitch_Right",
+            "wristRoll_Right",
+        ]
+    raise ValueError(f"Unknown robot type: {robot_type}")
 
+
+def main():
+    """Main function."""
     # Run the simulator
-    run_simulator(joint_names=joint_names)
+    run_simulator(joint_names=get_joint_names_for_robot(args_cli.robot))
+
+
 if __name__ == "__main__":
     # run the main function
     main()

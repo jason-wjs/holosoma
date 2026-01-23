@@ -215,13 +215,136 @@
       <origin rpy="0 0 0" xyz="0 0 0" />
       <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
     </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="1 0 0 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
   </link>
   <joint name="toeTip_Left" type="fixed">
     <parent link="toeLeft" />
     <child link="toeTipLeft" />
-    <origin rpy="0 0 0" xyz="0.14 0 -0.08" />
+    <origin rpy="0 0 0" xyz="0.17 0 -0.06" />
   </joint>
-  <link name="toeLeftKeyframe">
+  <link name="heelPadLeftInner">
+    <inertial>
+      <mass value="0.001" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.8 0.3 0.3 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="heelPadLeftInner" type="fixed">
+    <parent link="toeLeft" />
+    <child link="heelPadLeftInner" />
+    <origin rpy="0 0 0" xyz="-0.06 -0.035 -0.06" />
+  </joint>
+  <link name="heelPadLeftOuter">
+    <inertial>
+      <mass value="0.001" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.8 0.3 0.3 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="heelPadLeftOuter" type="fixed">
+    <parent link="toeLeft" />
+    <child link="heelPadLeftOuter" />
+    <origin rpy="0 0 0" xyz="-0.06 0.035 -0.06" />
+  </joint>
+    <link name="midfootPadLeftInner">
+    <inertial>
+      <mass value="0.001" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.3 0.8 0.3 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="midfootPadLeftInner" type="fixed">
+    <parent link="toeLeft" />
+    <child link="midfootPadLeftInner" />
+    <origin rpy="0 0 0" xyz="0.10 -0.05 -0.06" />
+  </joint>
+  <link name="midfootPadLeftOuter">
+    <inertial>
+      <mass value="0.001" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.3 0.8 0.3 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="midfootPadLeftOuter" type="fixed">
+    <parent link="toeLeft" />
+    <child link="midfootPadLeftOuter" />
+    <origin rpy="0 0 0" xyz="0.10 0.05 -0.06" />
+  </joint>
+  <!-- <link name="toeLeftKeyframe">
     <inertial>
       <mass value="0.01" />
       <origin rpy="0 0 0" xyz="0 0 0" />
@@ -247,7 +370,7 @@
     <parent link="anklePitchLeft" />
     <child link="toeLeftKeyframe" />
     <origin rpy="0 0 0" xyz="0.0374996 0.0 -0.01" />
-  </joint>
+  </joint> -->
   <link name="hipPitchRight">
     <inertial>
       <origin xyz="-0.05661792 -0.05759336 -0.00078211" rpy="0 0 0" />
@@ -428,13 +551,137 @@
       <origin rpy="0 0 0" xyz="0 0 0" />
       <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
     </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="1 0 0 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
   </link>
   <joint name="toeTip_Right" type="fixed">
     <parent link="toeRight" />
     <child link="toeTipRight" />
-    <origin rpy="0 0 0" xyz="0.14 0 -0.08" />
+    <origin rpy="0 0 0" xyz="0.17 0 -0.06" />
   </joint>
-  <link name="toeRightKeyframe">
+  <link name="heelPadRightInner">
+    <inertial>
+      <mass value="0.001" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.8 0.3 0.3 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="heelPadRightInner" type="fixed">
+    <parent link="toeRight" />
+    <child link="heelPadRightInner" />
+    <origin rpy="0 0 0" xyz="-0.06 0.035 -0.06" />
+  </joint>
+  <link name="heelPadRightOuter">
+    <inertial>
+      <mass value="0.001" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.8 0.3 0.3 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="heelPadRightOuter" type="fixed">
+    <parent link="toeRight" />
+    <child link="heelPadRightOuter" />
+    <origin rpy="0 0 0" xyz="-0.06 -0.035 -0.06" />
+  </joint>
+
+  <link name="midfootPadRightInner">
+    <inertial>
+      <mass value="0.001" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.3 0.8 0.3 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="midfootPadRightInner" type="fixed">
+    <parent link="toeRight" />
+    <child link="midfootPadRightInner" />
+    <origin rpy="0 0 0" xyz="0.08 0.05 -0.06" />
+  </joint>
+  <link name="midfootPadRightOuter">
+    <inertial>
+      <mass value="0.001" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.3 0.8 0.3 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="midfootPadRightOuter" type="fixed">
+    <parent link="toeRight" />
+    <child link="midfootPadRightOuter" />
+    <origin rpy="0 0 0" xyz="0.08 -0.05 -0.06" />
+  </joint>
+  <!-- <link name="toeRightKeyframe">
     <inertial>
       <mass value="0.01" />
       <origin rpy="0 0 0" xyz="0 0 0" />
@@ -460,7 +707,7 @@
     <parent link="toeRight" />
     <child link="toeRightKeyframe" />
     <origin rpy="0 0 0" xyz="0.0375023 0.0 -0.01" />
-  </joint>
+  </joint> -->
   <link name="waistRoll_link">
     <inertial>
       <origin xyz="0.00093826 0.00093832 0.03999995" rpy="0 0 0" />

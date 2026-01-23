@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-# viser_batch.py
 from __future__ import annotations
-
 import sys
 import threading
 import time
@@ -29,7 +26,7 @@ class ViserBatchConfig:
     qpos_dir: str = "rt_results"
     """Directory containing .npz files with qpos data."""
 
-    robot_urdf: str = "models/g1/g1_29dof.urdf"
+    robot_urdf: str = "models/adam_sp/adam_sp_29dof.urdf"
     """Path to robot URDF file."""
 
     object_urdf: str | None = None

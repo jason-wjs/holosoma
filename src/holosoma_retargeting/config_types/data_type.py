@@ -253,6 +253,7 @@ JOINTS_MAPPINGS = {
         "LeftFoot": "left_ankle_intermediate_1_link",
         "RightFoot": "right_ankle_intermediate_1_link",
     },
+    
     ("bvh", "g1"): {
         "Spine1": "pelvis_contour_link",
         "LeftUpLeg": "left_hip_pitch_link",
@@ -315,8 +316,8 @@ JOINTS_MAPPINGS = {
         "R_Shoulder": "shoulderPitchRight",
         "L_Elbow": "elbowLeft",
         "R_Elbow": "elbowRight",
-        "L_Ankle": "anklePitchLeft",
-        "R_Ankle": "anklePitchRight",
+        "L_Ankle": "toeLeftKeyframe",
+        "R_Ankle": "toeRightKeyframe",
         "L_Toe": "toeTipLeft",
         "R_Toe": "toeTipRight",
         "L_Wrist": "wristRollLeft",
@@ -340,7 +341,7 @@ JOINTS_MAPPINGS = {
         "RightToeBase": "toeTipRight",
     },
     ("bvh", "adam_sp"): {
-        "Hips": "pelvis",
+        "Spine1": "pelvis",
         "LeftUpLeg": "thighLeft",
         "RightUpLeg": "thighRight",
         "LeftLeg": "shinLeft",
@@ -349,12 +350,13 @@ JOINTS_MAPPINGS = {
         "RightArm": "shoulderPitchRight",
         "LeftForeArm": "elbowLeft",
         "RightForeArm": "elbowRight",
-        "LeftFoot": "anklePitchLeft", #toeLeftKeyframe
-        "RightFoot": "anklePitchRight",  #toeRightKeyframe
+        "LeftFoot": "toeLeftKeyframe", #toeLeftKeyframe
+        "RightFoot": "toeRightKeyframe",  #toeRightKeyframe
         "LeftToeBase": "toeTipLeft",
         "RightToeBase": "toeTipRight",
         "LeftHand": "wristRollLeft",
         "RightHand": "wristRollRight",
+
     },
 }
 
@@ -384,7 +386,7 @@ DATA_FORMAT_CONSTANTS: dict[str, FormatConstants] = {
         "default_human_height": 1.78,
     },
     "bvh": {
-        "default_human_height": 1.75,
+        "default_human_height": 1.85,
     },
 }
 
@@ -402,6 +404,10 @@ class MotionDataConfig:
     # Optional overrides - if None, will use defaults from data_format
     demo_joints: list[str] | None = None
     joints_mapping: dict[str, str] | None = None
+    
+    # Scale multiplier for smplh data format (applied to calculated scale factor)
+    # Values < 1.0 will make the robot smaller (more bent knees), > 1.0 will make it taller (straighter knees)
+    smplh_scale_multiplier: float = 0.95
 
     @property
     def resolved_demo_joints(self) -> list[str]:
@@ -455,6 +461,7 @@ class MotionDataConfig:
             "TOE_NAMES": self.toe_names,
             "DEFAULT_SCALE_FACTOR": self.default_scale_factor,
             "DEFAULT_HUMAN_HEIGHT": self.default_human_height,
+            "SMPLH_SCALE_MULTIPLIER": self.smplh_scale_multiplier,
         }
 
 

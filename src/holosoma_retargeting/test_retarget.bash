@@ -11,12 +11,12 @@ conda activate hsretargeting
 # --robot adam_sp \
 ## for adam_sp bvh default urdf path is models/adam_sp/adam_sp_29dof.urdf
 python examples/robot_retarget.py \
---data_path demo_data/OMOMO_new \
+--data_path demo_data/converted_bvh \
 --task-type robot_only \
---task-name "sub3_largebox_003" \
---data_format smplh \
+--task-name "CYCLE3_Skeleton_z_up_x_forward_gym" \
+--data_format bvh \
 --robot adam_sp \
---save_dir demo_results/adam_sp/robot_only/smplh \
+--save_dir demo_results/adam_sp/robot_only/converted_bvh \
 --retargeter.n-first-iter 50 \
 --retargeter.n-subsequent-iter 5 \
 --retargeter.smooth-weight 0.2 \

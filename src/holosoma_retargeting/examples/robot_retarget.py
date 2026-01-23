@@ -316,6 +316,8 @@ def load_motion_data(
 
             human_joints, object_poses = load_intermimic_data(str(pt_path))
             smpl_scale = calculate_scale_factor(task_name, constants.ROBOT_HEIGHT)
+            # Apply scale multiplier to adjust robot height (for knee bending adjustment)
+            smpl_scale = smpl_scale * motion_data_config.smplh_scale_multiplier
         elif data_format == "mocap":
             downsample = 4
             npy_file = data_path / f"{task_name}.npy"
@@ -339,7 +341,7 @@ def load_motion_data(
             human_joints, _ = load_bvh_data(str(bvh_file))
             human_joints = human_joints[0::4]
 
-            default_human_height = 1.65
+            default_human_height = motion_data_config.default_human_height or 1.70
             smpl_scale = constants.ROBOT_HEIGHT / default_human_height
 
         # Create dummy object poses for robot_only
@@ -353,6 +355,8 @@ def load_motion_data(
 
         human_joints, object_poses = load_intermimic_data(str(pt_path))
         smpl_scale = calculate_scale_factor(task_name, constants.ROBOT_HEIGHT)
+        # Apply scale multiplier to adjust robot height (for knee bending adjustment)
+        smpl_scale = smpl_scale * motion_data_config.smplh_scale_multiplier
 
     elif task_type == "climbing":
         task_dir = data_path / task_name

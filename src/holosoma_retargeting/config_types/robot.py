@@ -146,13 +146,14 @@ class RobotConfig:
                 # "toeRight",
                 "toeTipLeft",
                 "toeTipRight",
-                # "heelPadLeft",
-                # "heelPadRight",
-                # "midfootPadLeftInner",
-                # "midfootPadLeftOuter",
-                # "midfootPadRightInner",
-                # "midfootPadRightOuter",
-                # "midfootPadRight",
+                "heelPadLeftInner",
+                "heelPadLeftOuter",
+                "heelPadRightInner",
+                "heelPadRightOuter",
+                "midfootPadLeftInner",
+                "midfootPadLeftOuter",
+                "midfootPadRightInner",
+                "midfootPadRightOuter",
             ]
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
@@ -260,9 +261,19 @@ class RobotConfig:
         # TODO: Add manual lower bounds for your new robot if needed
         # Example:
         elif self.robot_type == "adam_sp":
+            # G1 waist roll: range -0.52 to 0.52, manual_lb -0.3 (57.7% of range)
+            # G1 waist pitch: range -0.52 to 0.52, manual_lb -0.1 (19.2% of range)
+            # adam_sp waistRoll: range -0.279 to 0.279, apply same percentage
+            # adam_sp waistPitch: range -0.663 to 1.361, apply same percentage
             base.update({
                 # "11": -0.45, # ankle pitch left
                 # "17": -0.45, # ankle pitch right
+                "7": -1.85, # hip roll left
+                "13": -1.85, # hip roll right
+                "12": -0.2, # ankle roll left
+                "18": -0.2, # ankle roll right
+                "19": -0.161,  # waist roll (57.7% of -0.279)
+                "20": -0.127,  # waist pitch (19.2% of -0.663)
             })
 
         return base
@@ -293,8 +304,17 @@ class RobotConfig:
         # TODO: Add manual upper bounds for your new robot if needed
         # Example:
         elif self.robot_type == "adam_sp":
+            # G1 waist roll: range -0.52 to 0.52, manual_ub 0.3 (57.7% of range)
+            # G1 waist pitch: range -0.52 to 0.52, manual_ub 0.52 (100% of range)
+            # adam_sp waistRoll: range -0.279 to 0.279, apply same percentage
+            # adam_sp waistPitch: range -0.663 to 1.361, apply same percentage
             base.update({
-                "20": 0.3,  # waist Pitch
+                "7": 2.0, # hip roll left
+                "13": 2.0, # hip roll right
+                "12": 0.2,
+                "18": 0.2,
+                "19": 0.161,   # waist roll (57.7% of 0.279)
+                "20": 0.55,   # waist pitch (100% of 1.361, full range)
             })
 
         return base
@@ -311,8 +331,8 @@ class RobotConfig:
         if self.robot_type == "adam_sp":
             ## add manual cost for foot and toe
             return {
-                # "8": 0.1,  # hipRoll_Left
-                # "9": 0.1,  # hipYaw_Left
+                "7": 0.1,  # hip Pitch left
+                 "13": 0.1,  # hip Pitch right
                 # "11": 0.5, # ankle pitch left
                 # "12": 0.5, # ankle roll left
                 # "17": 0.5, # ankle pitch right

@@ -111,25 +111,35 @@
                 <joint name="anklePitch_Left" pos="0 0 0" axis="0 1 0" range="-1 0.35" actuatorfrcrange="-40 40" />
                 <geom class="visual" mesh="anklePitchLeft" material="white" />
                 <geom class="collision" mesh="anklePitchLeft" />
+                <body name="toeLeftKeyframe" pos="0.0374996 -4.016e-05 -0.01">
+                  <!-- <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" /> -->
+                  <geom type="sphere" size="0.005" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
+                </body>
                 <body name="toeLeft">
                   <inertial pos="0.0374996 -4.016e-05 -0.0419674" mass="0.634796" diaginertia="0.00231317 0.00226894 0.00045636" />
                   <joint name="ankleRoll_Left" pos="0 0 0" axis="1 0 0" range="-0.3491 0.3491" actuatorfrcrange="-12 12" />
                   <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.752941 0.752941 0.752941 1" mesh="toeLeft" />
                   <geom name="toeLeft_collision" type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="toeLeft" />
-                  <body name="toeTipLeft" pos="0.17 0 -0.08">
+                  <body name="toeTipLeft" pos="0.17 0 -0.06">
                     <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
                     <geom type="sphere" size="0.005" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
                   </body>
-                  <body name="heelPadLeft" pos="-0.06 0 -0.05">
-                    <geom type="sphere" size="0.02" rgba="0.8 0.3 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  <body name="heelPadLeftInner" pos="-0.06 -0.05 -0.06">
+                    <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                    <geom type="sphere" size="0.005" rgba="0.8 0.3 0.3 0.5" group="1" contype="1" conaffinity="1" />
                   </body>
-                  <body name="midfootPadLeft" pos="0.05 0 -0.05">
-                    <geom type="sphere" size="0.02" rgba="0.3 0.8 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  <body name="heelPadLeftOuter" pos="-0.06 0.05 -0.06">
+                    <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                    <geom type="sphere" size="0.005" rgba="0.8 0.3 0.3 0.5" group="1" contype="1" conaffinity="1" />
                   </body>
-                
-                </body>
-                <body name="toeLeftKeyframe" pos="0.0 0.0 0.0">
-                  <geom type="sphere" size="0.01" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
+                  <body name="midfootPadLeftInner" pos="0.10 -0.05 -0.06">
+                    <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                    <geom type="sphere" size="0.005" rgba="0.3 0.8 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  </body>
+                  <body name="midfootPadLeftOuter" pos="0.10 0.05 -0.06">
+                    <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                    <geom type="sphere" size="0.005" rgba="0.3 0.8 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  </body>
                 </body>
               </body>
             </body>
@@ -161,26 +171,40 @@
                 <joint name="anklePitch_Right" pos="0 0 0" axis="0 1 0" range="-1 0.35" actuatorfrcrange="-40 40" />
                 <geom class="visual" mesh="anklePitchRight" material="white" />
                 <geom class="collision" mesh="anklePitchRight" />
+                <body name="toeRightKeyframe" pos="0.0375023 4.002e-05 -0.01">
+                  <!-- <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" /> -->
+                  <geom type="sphere" size="0.005" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
+                </body>
                 <body name="toeRight">
                   <inertial pos="0.0375023 4.002e-05 -0.0419671" quat="-0.00346801 0.668408 0.00279542 0.743782" mass="0.634808" diaginertia="0.0023347 0.00226908 0.00043472" />
                   <joint name="ankleRoll_Right" pos="0 0 0" axis="1 0 0" range="-0.3491 0.3491" actuatorfrcrange="-12 12" />
                   <geom class="visual" mesh="toeRight" material="silver" />
                   <geom class="collision" name="toeRight_collision" mesh="toeRight" />
-                  <body name="toeTipRight" pos="0.17 0 -0.08">
+                  <body name="toeTipRight" pos="0.17 0 -0.06">
                     <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
                     <geom type="sphere" size="0.005" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
                   </body>
-                  <body name="heelPadRight" pos="-0.06 0 0.03">
-                    <geom type="sphere" size="0.02" rgba="0.8 0.3 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  <body name="heelPadRightInner" pos="-0.06 0.05 -0.06">
+                    <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                    <geom type="sphere" size="0.005" rgba="0.8 0.3 0.3 0.5" group="1" contype="1" conaffinity="1" />
                   </body>
-                  <body name="midfootPadRight" pos="0.05 0 0">
-                    <geom type="sphere" size="0.02" rgba="0.3 0.8 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  <body name="heelPadRightOuter" pos="-0.06 -0.05 -0.06">
+                    <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                    <geom type="sphere" size="0.005" rgba="0.8 0.3 0.3 0.5" group="1" contype="1" conaffinity="1" />
                   </body>
-                <body name="toeRightKeyframe" pos="0.0 0.0 0.0">
-                  <geom type="sphere" size="0.01" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
-                </body>
+                  <body name="midfootPadRightInner" pos="0.10 0.05 -0.06">
+                    <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                    <geom type="sphere" size="0.005" rgba="0.3 0.8 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  </body>
+                  <body name="midfootPadRightOuter" pos="0.10 -0.05 -0.06">
+                    <inertial pos="0 0 0" mass="0.001" diaginertia="1e-7 1e-7 1e-7" />
+                    <geom type="sphere" size="0.005" rgba="0.3 0.8 0.3 0.5" group="1" contype="1" conaffinity="1" />
+                  </body>
                 </body>
               </body>
+              <!-- <body name="toeRightKeyframe" pos="0.0 0.0 0.0">
+              <geom type="sphere" size="0.01" rgba="1 0 0 0.5" group="1" contype="1" conaffinity="1"/>
+              </body> -->
             </body>
           </body>
         </body>

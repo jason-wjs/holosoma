@@ -609,6 +609,9 @@ class RetargetingEvaluator:
             toe_names = ["L_Toe", "R_Toe"]
             human_joints, _ = load_intermimic_data(str(pt_path))
             smpl_scale = calculate_scale_factor(data_name, self.constants.ROBOT_HEIGHT)
+            # Apply scale multiplier to adjust robot height (for knee bending adjustment)
+            smplh_scale_multiplier = self.motion_data_config.smplh_scale_multiplier
+            smpl_scale = smpl_scale * smplh_scale_multiplier
 
             # For smplh data, we need to use smplh demo_joints for contact extraction
             # Check if toe names are in current demo_joints
