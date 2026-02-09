@@ -6,6 +6,7 @@ This note summarizes the current `robot_only` support added for Adam Pro in `hol
 
 - Scope covered: `robot_only` retargeting.
 - In progress / next: object-interaction and climbing refinements.
+- Hand end-effector markers are currently under refinement and should be ignored for robot-only tuning/evaluation.
 
 ## Features Added (Robot-Only)
 
@@ -31,9 +32,7 @@ Current retargeting-relevant details include:
 - Retargeting-only `ground` plane in XML.
 - Foot patch markers on each foot (5 points per foot).
 - Named foot sphere geoms (`left/right_foot_sphere_{1..5}_link`) to align contact handling with G1 pattern.
-- Hand end-effector marker links:
-  - `left_hand_ee_link`
-  - `right_hand_ee_link`
+- Hand end-effector marker links exist (`left_hand_ee_link`, `right_hand_ee_link`) but are not considered stable yet; for robot-only mode, continue to rely on wrist-based behavior and ignore these markers.
 
 ### 3) Motion format mappings for Adam Pro
 
@@ -173,6 +172,5 @@ Run:
 ```bash
 bash scripts/retargeting/convert_optitrack_pkl_to_npz.sh
 ```
-
 
 
