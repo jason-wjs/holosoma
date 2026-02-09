@@ -20,30 +20,30 @@ cd "${REPO_ROOT}/src/holosoma_retargeting/holosoma_retargeting"
 #   "$@"
 
 ## omomo_object_interaction
-python examples/robot_retarget.py \
-  --robot adam_pro \
-  --task-type object_interaction \
-  --task-name sub3_largebox_003 \
-  --data-path demo_data/OMOMO_new \
-  --data-format smplh \
-  --save-dir "demo_results/adam_pro/object_interaction/omomo" \
-  --retargeter.debug \
-  --retargeter.visualize \
-  "$@"
-
-## lafan1
 # python examples/robot_retarget.py \
 #   --robot adam_pro \
-#   --task-type robot_only \
-#   --task-name dance1_subject1 \
-#   --data-path demo_data/lafan1_npy \
-#   --data-format lafan \
-#   --save-dir "demo_results/adam_pro/robot_only/lafan1" \
-#   --task-config.ground-range -15 15 \
-#   --retargeter.foot-sticking-tolerance 0.02 \
+#   --task-type object_interaction \
+#   --task-name sub3_largebox_003 \
+#   --data-path demo_data/OMOMO_new \
+#   --data-format smplh \
+#   --save-dir "demo_results/adam_pro/object_interaction/omomo" \
 #   --retargeter.debug \
 #   --retargeter.visualize \
 #   "$@"
+
+## lafan1
+python examples/robot_retarget.py \
+  --robot adam_pro \
+  --task-type robot_only \
+  --task-name dance1_subject1 \
+  --data-path demo_data/lafan1_npy \
+  --data-format lafan \
+  --save-dir "demo_results/adam_pro/robot_only/lafan1" \
+  --task-config.ground-range -15 15 \
+  --retargeter.foot-sticking-tolerance 0.02 \
+  --retargeter.debug \
+  --retargeter.visualize \
+  "$@"
 
 ## amass
 # python examples/robot_retarget.py \
