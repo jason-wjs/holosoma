@@ -1,13 +1,37 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import torch
 import tyro
+
+# Support both module execution (`python -m ...`) and direct script execution.
+# The vendored layout is: data_utils/human_body_prior/human_body_prior/...
+_VENDORED_HBP_ROOT = Path(__file__).resolve().parent / "human_body_prior"
+if _VENDORED_HBP_ROOT.is_dir() and str(_VENDORED_HBP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_VENDORED_HBP_ROOT))
+
 from human_body_prior.body_model.body_model import BodyModel  # type: ignore[import-not-found]
+
+
+def _normalize_gender_token(value: object) -> str:
+    """Normalize AMASS gender values to one of: male/female/neutral."""
+    if isinstance(value, bytes):
+        token = value.decode("utf-8", errors="ignore")
+    else:
+        token = str(value)
+    token = token.strip().lower()
+    if token in {"m", "male"}:
+        return "male"
+    if token in {"f", "female"}:
+        return "female"
+    if token in {"n", "neutral", "none", "unknown"}:
+        return "neutral"
+    return "neutral"
 
 
 def load_ori_npz_file(npz_file_path, dest_fps=30):
@@ -59,7 +83,8 @@ def run_smplx_model(
     aa_rot_rep = aa_rot_rep.reshape(bs * num_steps, -1, 3)  # (BS*T) X n_joints X 3
 
     betas = betas[:, None, :].repeat(1, num_steps, 1).reshape(bs * num_steps, -1)  # (BS*T) X 16
-    gender = np.asarray(gender)[:, np.newaxis].repeat(num_steps, axis=1)
+    gender = np.asarray([_normalize_gender_token(v) for v in np.asarray(gender).reshape(-1)])
+    gender = gender[:, np.newaxis].repeat(num_steps, axis=1)
     gender = gender.reshape(-1).tolist()  # (BS*T)
 
     smpl_trans = root_trans.reshape(-1, 3)  # (BS*T) X 3
@@ -85,7 +110,11 @@ def run_smplx_model(
     prev_nbidx = 0
     cat_idx_map = np.ones((B), dtype=np.int64) * -1
     for gender_name in gender_names:
-        gender_idx = np.array(gender) == gender_name
+        # "neutral-only" mode runs all frames with the neutral body model.
+        if len(gender_names) == 1 and gender_name == "neutral":
+            gender_idx = np.ones((B), dtype=bool)
+        else:
+            gender_idx = np.array(gender) == gender_name
         nbidx = np.sum(gender_idx)
 
         cat_idx_map[gender_idx] = np.arange(prev_nbidx, prev_nbidx + nbidx, dtype=np.int64)
@@ -117,6 +146,9 @@ def run_smplx_model(
 
         pred_joints.append(pred_body.Jtr)
         pred_verts.append(pred_body.v)
+
+    if not pred_joints:
+        raise ValueError(f"No SMPLX frames selected for reconstruction. Normalized genders: {set(gender)}")
 
     x_pred_smpl_joints = torch.cat(pred_joints, axis=0)  # () X 52 X 3
 

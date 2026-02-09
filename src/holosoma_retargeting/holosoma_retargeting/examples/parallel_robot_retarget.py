@@ -231,7 +231,16 @@ def process_single_task(args):
 
         # Preprocess motion data
         if task_type == "robot_only":
-            human_joints = preprocess_motion_data(human_joints, retargeter, toe_names, smpl_scale)
+            ground_height_percentile = 5.0 if data_format == "optitrack" else 0.0
+            mat_height = 0.0 if data_format == "optitrack" else 0.1
+            human_joints = preprocess_motion_data(
+                human_joints,
+                retargeter,
+                toe_names,
+                smpl_scale,
+                mat_height=mat_height,
+                ground_height_percentile=ground_height_percentile,
+            )
         elif task_type in {"object_interaction", "climbing"}:
             human_joints, object_poses, object_moving_frame_idx = preprocess_motion_data(
                 human_joints, retargeter, toe_names, scale=smpl_scale, object_poses=object_poses

@@ -142,6 +142,35 @@ MOCAP_DEMO_JOINTS = [
     "RightFootMod",
 ]
 
+OPTITRACK_DEMO_JOINTS = [
+    "Hips",
+    "Spine",
+    "Spine1",
+    "Neck",
+    "Head",
+    "HeadEnd",
+    "LeftShoulder",
+    "LeftArm",
+    "LeftForeArm",
+    "LeftHand",
+    "LHandEnd",
+    "RightShoulder",
+    "RightArm",
+    "RightForeArm",
+    "RightHand",
+    "RHandEnd",
+    "LeftUpLeg",
+    "LeftLeg",
+    "LeftFoot",
+    "LeftToeBase",
+    "LToeEnd",
+    "RightUpLeg",
+    "RightLeg",
+    "RightFoot",
+    "RightToeBase",
+    "RToeEnd",
+]
+
 SMPLX_DEMO_JOINTS = [
     "Pelvis",
     "L_Hip",
@@ -203,6 +232,23 @@ JOINTS_MAPPINGS = {
         "LeftHand": "left_hand_sphere_link",
         "RightHand": "right_hand_sphere_link",
     },
+    ("lafan", "adam_pro"): {
+        "Spine1": "pelvis",
+        "LeftUpLeg": "hipPitchLeft",
+        "RightUpLeg": "hipPitchRight",
+        "LeftLeg": "shinLeft",
+        "RightLeg": "shinRight",
+        "LeftArm": "shoulderRollLeft",
+        "RightArm": "shoulderRollRight",
+        "LeftForeArm": "elbowLeft",
+        "RightForeArm": "elbowRight",
+        "LeftFoot": "anklePitchLeft",
+        "RightFoot": "anklePitchRight",
+        "LeftToeBase": "left_foot_sphere_5_link",
+        "RightToeBase": "right_foot_sphere_5_link",
+        "LeftHand": "wristRollLeft",
+        "RightHand": "wristRollRight",
+    },
     ("smplh", "g1"): {
         "Pelvis": "pelvis_contour_link",
         "L_Hip": "left_hip_pitch_link",
@@ -237,6 +283,23 @@ JOINTS_MAPPINGS = {
         "L_Wrist": "left_hand_sphere_link",
         "R_Wrist": "right_hand_sphere_link",
     },
+    ("smplh", "adam_pro"): {
+        "Pelvis": "pelvis",
+        "L_Hip": "hipPitchLeft",
+        "R_Hip": "hipPitchRight",
+        "L_Knee": "shinLeft",
+        "R_Knee": "shinRight",
+        "L_Shoulder": "shoulderRollLeft",
+        "R_Shoulder": "shoulderRollRight",
+        "L_Elbow": "elbowLeft",
+        "R_Elbow": "elbowRight",
+        "L_Ankle": "anklePitchLeft",
+        "R_Ankle": "anklePitchRight",
+        "L_Toe": "left_foot_sphere_5_link",
+        "R_Toe": "right_foot_sphere_5_link",
+        "L_Wrist": "wristRollLeft",
+        "R_Wrist": "wristRollRight",
+    },
     ("smplx", "g1"): {
         "Pelvis": "pelvis_contour_link",
         "L_Hip": "left_hip_pitch_link",
@@ -253,6 +316,23 @@ JOINTS_MAPPINGS = {
         "R_Foot": "right_ankle_roll_sphere_5_link",
         "L_Wrist": "left_rubber_hand_link",
         "R_Wrist": "right_rubber_hand_link",
+    },
+    ("smplx", "adam_pro"): {
+        "Pelvis": "pelvis",
+        "L_Hip": "hipPitchLeft",
+        "R_Hip": "hipPitchRight",
+        "L_Knee": "shinLeft",
+        "R_Knee": "shinRight",
+        "L_Shoulder": "shoulderRollLeft",
+        "R_Shoulder": "shoulderRollRight",
+        "L_Elbow": "elbowLeft",
+        "R_Elbow": "elbowRight",
+        "L_Ankle": "anklePitchLeft",
+        "R_Ankle": "anklePitchRight",
+        "L_Foot": "left_foot_sphere_5_link",
+        "R_Foot": "right_foot_sphere_5_link",
+        "L_Wrist": "wristRollLeft",
+        "R_Wrist": "wristRollRight",
     },
     ("mocap", "g1"): {
         "Spine1": "pelvis_contour_link",
@@ -288,6 +368,40 @@ JOINTS_MAPPINGS = {
         "LeftFoot": "Ankle_Cross_Left",
         "RightFoot": "Ankle_Cross_Right",
     },
+    ("optitrack", "g1"): {
+        "Spine1": "pelvis_contour_link",
+        "LeftUpLeg": "left_hip_pitch_link",
+        "RightUpLeg": "right_hip_pitch_link",
+        "LeftLeg": "left_knee_link",
+        "RightLeg": "right_knee_link",
+        "LeftArm": "left_shoulder_roll_link",
+        "RightArm": "right_shoulder_roll_link",
+        "LeftForeArm": "left_elbow_link",
+        "RightForeArm": "right_elbow_link",
+        "LeftFoot": "left_ankle_intermediate_1_link",
+        "RightFoot": "right_ankle_intermediate_1_link",
+        "LeftToeBase": "left_ankle_roll_sphere_5_link",
+        "RightToeBase": "right_ankle_roll_sphere_5_link",
+        "LeftHand": "left_rubber_hand_link",
+        "RightHand": "right_rubber_hand_link",
+    },
+    ("optitrack", "adam_pro"): {
+        "Spine1": "pelvis",
+        "LeftUpLeg": "hipPitchLeft",
+        "RightUpLeg": "hipPitchRight",
+        "LeftLeg": "shinLeft",
+        "RightLeg": "shinRight",
+        "LeftArm": "shoulderRollLeft",
+        "RightArm": "shoulderRollRight",
+        "LeftForeArm": "elbowLeft",
+        "RightForeArm": "elbowRight",
+        "LeftFoot": "anklePitchLeft",
+        "RightFoot": "anklePitchRight",
+        "LeftToeBase": "left_foot_sphere_5_link",
+        "RightToeBase": "right_foot_sphere_5_link",
+        "LeftHand": "wristRollLeft",
+        "RightHand": "wristRollRight",
+    },
 }
 
 # Data format specific constants
@@ -296,6 +410,7 @@ TOE_NAMES_BY_FORMAT = {
     "smplh": ["L_Toe", "R_Toe"],
     "mocap": ["LeftToeBase", "RightToeBase"],
     "smplx": ["L_Foot", "R_Foot"],
+    "optitrack": ["LeftToeBase", "RightToeBase"],
 }
 
 
@@ -312,6 +427,9 @@ DATA_FORMAT_CONSTANTS: dict[str, FormatConstants] = {
     "mocap": {
         "default_human_height": 1.78,
     },
+    "optitrack": {
+        "default_human_height": 1.7,
+    },
 }
 
 # Unified registry: Maps format name to demo joints
@@ -322,6 +440,7 @@ DEMO_JOINTS_REGISTRY: dict[str, list[str]] = {
     "smplh": SMPLH_DEMO_JOINTS,
     "mocap": MOCAP_DEMO_JOINTS,
     "smplx": SMPLX_DEMO_JOINTS,
+    "optitrack": OPTITRACK_DEMO_JOINTS,
 }
 
 # Type alias for data formats - use str to allow dynamic data formats via DEMO_JOINTS_REGISTRY

@@ -211,6 +211,7 @@ def preprocess_motion_data(
     foot_names,
     scale=0.714,
     mat_height=0.1,
+    ground_height_percentile=0.0,
     object_poses=None,
 ):
     """
@@ -231,7 +232,16 @@ def preprocess_motion_data(
         retargeter.demo_joints.index(foot_names[0]),
         retargeter.demo_joints.index(foot_names[1]),
     ]
-    z_min = human_joints[:, toe_indices, 2].min()
+    toe_heights = human_joints[:, toe_indices, 2].reshape(-1)
+    if ground_height_percentile > 0:
+        # Use "higher" to avoid interpolation pulling the floor down from sparse outliers.
+        try:
+            z_min = float(np.percentile(toe_heights, ground_height_percentile, method="higher"))
+        except TypeError:
+            z_min = float(np.percentile(toe_heights, ground_height_percentile, interpolation="higher"))
+    else:
+        z_min = float(toe_heights.min())
+
     if z_min >= mat_height:
         # On a mat.
         z_min -= mat_height
@@ -711,7 +721,10 @@ def extract_foot_sticking_sequence_velocity(smpl_joints, demo_joints, foot_names
     right_toe_velocity = np.concatenate([[velocity_threshold + 1], right_toe_velocity])
 
     return [
-        {"L_Toe": left_toe_velocity[i] <= velocity_threshold, "R_Toe": right_toe_velocity[i] <= velocity_threshold}
+        {
+            foot_names[0]: left_toe_velocity[i] <= velocity_threshold,
+            foot_names[1]: right_toe_velocity[i] <= velocity_threshold,
+        }
         for i in range(len(smpl_joints))
     ]
 

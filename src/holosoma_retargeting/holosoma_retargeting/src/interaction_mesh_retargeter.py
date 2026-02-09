@@ -132,21 +132,21 @@ class InteractionMeshRetargeter:
 
         self.nq_a = len(self.q_a_indices)
 
-        # Create complete limits with floating base (-inf, inf) and actuated joint limits
-        n_floating_base = 7
-        joint_names = [self.robot_model.joint(i).name for i in range(self.robot_model.njnt)]
-        actuated_joints = [(i, name) for i, name in enumerate(joint_names) if name]  # Filter out None names
-
+        # Build per-qpos limits using joint qpos addresses.
+        # This is robust when the freejoint is named (e.g., Adam Pro's floating_base),
+        # because we no longer assume "all named joints are 1-DoF actuated joints".
         large_number = 1e6
-        complete_lower_limits = np.concatenate(
-            [-large_number * np.ones(n_floating_base), self.robot_model.jnt_range[[i for i, _ in actuated_joints], 0]]
-        )
-        complete_upper_limits = np.concatenate(
-            [large_number * np.ones(n_floating_base), self.robot_model.jnt_range[[i for i, _ in actuated_joints], 1]]
-        )
+        complete_lower_limits = -large_number * np.ones(self.nq)
+        complete_upper_limits = large_number * np.ones(self.nq)
+        for joint_id in range(self.robot_model.njnt):
+            joint_type = self.robot_model.jnt_type[joint_id]
+            qpos_idx = self.robot_model.jnt_qposadr[joint_id]
+            if joint_type in (mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE):
+                complete_lower_limits[qpos_idx] = self.robot_model.jnt_range[joint_id, 0]
+                complete_upper_limits[qpos_idx] = self.robot_model.jnt_range[joint_id, 1]
 
-        self.q_a_lb = complete_lower_limits[self.q_a_indices]
-        self.q_a_ub = complete_upper_limits[self.q_a_indices]
+        self.q_a_lb = complete_lower_limits[self.q_a_indices].copy()
+        self.q_a_ub = complete_upper_limits[self.q_a_indices].copy()
 
         self.q_a_lb[np.array(list(self.task_constants.MANUAL_LB.keys())).astype(int)] = list(
             self.task_constants.MANUAL_LB.values()
@@ -325,7 +325,8 @@ class InteractionMeshRetargeter:
             q_locked_list = np.zeros((num_frames, self.nq))
             q_locked_list[0, self.q_a_indices] = q_a_init
 
-        q_locked_list[:, -7:] = object_poses_augmented
+        if self.has_dynamic_object:
+            q_locked_list[:, -7:] = object_poses_augmented
         q = np.copy(q_locked_list[0])
         retargeted_motions = [q]
 

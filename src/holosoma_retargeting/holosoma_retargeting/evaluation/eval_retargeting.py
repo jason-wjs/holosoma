@@ -183,6 +183,60 @@ class RetargetingEvaluator:
         self._obj_VW = np.vstack(obj_Vs) if obj_Vs else np.zeros((0, 3), np.float64)
         self._obj_FW = np.vstack(obj_Fs) if obj_Fs else np.zeros((0, 3), np.int32)
 
+    @staticmethod
+    def _resolve_default_joint_names(
+        demo_joints: Sequence[str],
+        mapping_keys: Sequence[str],
+        mode: Literal["object_contact", "terrain_contact"],
+    ) -> list[str]:
+        """Resolve robust default contact joints from available demo and mapped joints."""
+        available = set(demo_joints).intersection(mapping_keys)
+
+        if mode == "object_contact":
+            # Prefer bilateral wrist/hand end-effectors depending on data format naming.
+            preferred_pairs = (
+                ("L_Wrist", "R_Wrist"),
+                ("LeftHand", "RightHand"),
+                ("LeftHandMiddle3", "RightHandMiddle3"),
+            )
+            for left_name, right_name in preferred_pairs:
+                if left_name in available and right_name in available:
+                    return [left_name, right_name]
+
+            fallback_order = (
+                "L_Wrist",
+                "R_Wrist",
+                "LeftHand",
+                "RightHand",
+                "LeftHandMiddle3",
+                "RightHandMiddle3",
+            )
+            return [name for name in fallback_order if name in available]
+
+        if mode == "terrain_contact":
+            # Include hand, foot, and toe keypoints when available.
+            ordered_candidates = (
+                "LeftHandMiddle3",
+                "RightHandMiddle3",
+                "L_Wrist",
+                "R_Wrist",
+                "LeftHand",
+                "RightHand",
+                "LeftFoot",
+                "RightFoot",
+                "L_Ankle",
+                "R_Ankle",
+                "L_Foot",
+                "R_Foot",
+                "LeftToeBase",
+                "RightToeBase",
+                "L_Toe",
+                "R_Toe",
+            )
+            return [name for name in ordered_candidates if name in available]
+
+        raise ValueError(f"Unknown mode: {mode}")
+
     def _get_robot_link_positions(self, q, link_names):
         """Get robot link positions for given configuration using Mujoco.
 
@@ -308,13 +362,10 @@ class RetargetingEvaluator:
             return contact  # no object mesh baked
 
         if joint_names is None:
-            joint_names = (
-                "LeftHandMiddle3",
-                "RightHandMiddle3",
-                "LeftFoot",
-                "RightFoot",
-                "LeftToeBase",
-                "RightToeBase",
+            joint_names = self._resolve_default_joint_names(
+                self.demo_joints,
+                self.joints_mapping.keys(),
+                mode="terrain_contact",
             )
 
         for jn in joint_names:
@@ -346,7 +397,15 @@ class RetargetingEvaluator:
             dict: Contact precision metrics
         """
         if joint_names is None:
-            joint_names = ("L_Wrist", "R_Wrist")
+            joint_names = self._resolve_default_joint_names(
+                self.demo_joints,
+                self.joints_mapping.keys(),
+                mode="object_contact",
+            )
+
+        joint_names = [name for name in joint_names if name in self.demo_joints and name in self.joints_mapping]
+        if not joint_names:
+            return 1.0
 
         demo_local_points_list: list[np.ndarray] = []
         robot_local_points_list: list[np.ndarray] = []
@@ -372,24 +431,34 @@ class RetargetingEvaluator:
 
         return 1 - np.sum(worst_miss_contact) / len(q_trajectory)
 
-    def detect_foot_sliding(self, q_trajectory, contact_sequences):
+    def detect_foot_sliding(self, q_trajectory, contact_sequences, toe_names: Sequence[str]):
         """
         Detect foot sliding during contact phases.
 
         Args:
             q_trajectory: Robot joint configurations (N, DOF)
             contact_sequences: Contact information per frame
+            toe_names: Demo toe names [left_toe_name, right_toe_name]
 
         Returns:
             dict: Foot sliding metrics
         """
+        if len(toe_names) != 2:
+            raise ValueError(f"toe_names must contain [left, right], got: {toe_names}")
+
+        left_toe_name, right_toe_name = toe_names
+        if left_toe_name not in self.joints_mapping or right_toe_name not in self.joints_mapping:
+            raise ValueError(
+                f"Toe names {toe_names} are not available in robot mapping keys: {list(self.joints_mapping.keys())}"
+            )
+
+        left_toe_link = self.joints_mapping[left_toe_name]
+        right_toe_link = self.joints_mapping[right_toe_name]
 
         left_toe_positions = []
         right_toe_positions = []
         for q in q_trajectory:
-            toe_positions = self._get_robot_link_positions(
-                q, ["left_ankle_roll_sphere_5_link", "right_ankle_roll_sphere_5_link"]
-            )
+            toe_positions = self._get_robot_link_positions(q, [left_toe_link, right_toe_link])
             left_toe_positions.append(toe_positions[0])
             right_toe_positions.append(toe_positions[1])
 
@@ -401,11 +470,17 @@ class RetargetingEvaluator:
         left_toe_xy_velocities = np.concatenate([[0], left_toe_xy_velocities])
         right_toe_xy_velocities = np.concatenate([[0], right_toe_xy_velocities])
 
-        left_foot_sticking_sequence = np.array([contact_sequence["L_Toe"] for contact_sequence in contact_sequences])
-        right_foot_sticking_sequence = np.array([contact_sequence["R_Toe"] for contact_sequence in contact_sequences])
+        left_foot_sticking_sequence = np.array(
+            [contact_sequence[left_toe_name] for contact_sequence in contact_sequences]
+        )
+        right_foot_sticking_sequence = np.array(
+            [contact_sequence[right_toe_name] for contact_sequence in contact_sequences]
+        )
 
         left_foot_sliding_sequence = left_foot_sticking_sequence & (left_toe_xy_velocities > self.sliding_threshold)
-        right_foot_sliding_sequence = right_foot_sticking_sequence & (right_toe_xy_velocities > self.sliding_threshold)
+        right_foot_sliding_sequence = right_foot_sticking_sequence & (
+            right_toe_xy_velocities > self.sliding_threshold
+        )
 
         num_foot_sticking_frames = np.sum(left_foot_sticking_sequence | right_foot_sticking_sequence)
         max_toe_sliding_velocities = np.max(
@@ -419,10 +494,11 @@ class RetargetingEvaluator:
         )
         max_toe_sliding_velocities = max_toe_sliding_velocities[max_toe_sliding_velocities > 0]
 
-        return (
-            len(max_toe_sliding_velocities) / num_foot_sticking_frames,
-            max_toe_sliding_velocities,
+        sliding_ratio = (
+            len(max_toe_sliding_velocities) / num_foot_sticking_frames if num_foot_sticking_frames > 0 else 0.0
         )
+
+        return (sliding_ratio, max_toe_sliding_velocities)
 
     def evaluate_trajectory(self, task_name, data_dir, input_data_dir):
         """
@@ -442,10 +518,13 @@ class RetargetingEvaluator:
             return None
         penetration_duration, penetration_max_depths = self.evaluate_penetration(q_retarget)
 
+        toe_names = ["L_Toe", "R_Toe"]
         human_joints, object_poses = load_intermimic_data(f"{input_data_dir}/{task_name}.pt")
-        contact_sequences = extract_foot_sticking_sequence_velocity(human_joints, self.demo_joints, ["L_Toe", "R_Toe"])
+        contact_sequences = extract_foot_sticking_sequence_velocity(human_joints, self.demo_joints, toe_names)
         sliding_duration, max_toe_sliding_velocities = self.detect_foot_sliding(
-            q_retarget, contact_sequences[: q_retarget.shape[0]]
+            q_retarget,
+            contact_sequences[: q_retarget.shape[0]],
+            toe_names,
         )
 
         contact_results = self.evaluate_contact_precision(human_joints, object_poses, q_retarget)
@@ -465,14 +544,7 @@ class RetargetingEvaluator:
         self,
         human_joints_motion: np.ndarray,  # [T, J, 3] world
         q_trajectory: np.ndarray,  # [T, nq]
-        joint_names=(
-            "LeftHandMiddle3",
-            "RightHandMiddle3",
-            "LeftFoot",
-            "RightFoot",
-            "LeftToeBase",
-            "RightToeBase",
-        ),
+        joint_names: Sequence[str] | None = None,
     ) -> float:
         """
         For each frame:
@@ -483,6 +555,13 @@ class RetargetingEvaluator:
         have_obj = self._obj_VW.shape[0] > 0
         if not have_obj:
             return 1.0  # nothing to check against
+
+        if joint_names is None:
+            joint_names = self._resolve_default_joint_names(
+                self.demo_joints,
+                self.joints_mapping.keys(),
+                mode="terrain_contact",
+            )
 
         preserved = []
 
@@ -546,11 +625,12 @@ class RetargetingEvaluator:
         smpl_scale = self.constants.ROBOT_HEIGHT / 1.78
         human_joints = np.load(npy_file)[::4] * smpl_scale
 
-        contact_sequences = extract_foot_sticking_sequence_velocity(
-            human_joints, self.demo_joints, ["LeftToeBase", "RightToeBase"]
-        )
+        toe_names = ["LeftToeBase", "RightToeBase"]
+        contact_sequences = extract_foot_sticking_sequence_velocity(human_joints, self.demo_joints, toe_names)
         sliding_duration, max_toe_sliding_velocities = self.detect_foot_sliding(
-            q_retarget, contact_sequences[: q_retarget.shape[0]]
+            q_retarget,
+            contact_sequences[: q_retarget.shape[0]],
+            toe_names,
         )
 
         contact_results = self.evaluate_terrain_contact_precision(human_joints, q_retarget)
@@ -616,7 +696,7 @@ class RetargetingEvaluator:
             spine_joint_idx = self.demo_joints.index("Spine1")
             # LAFAN-specific spine adjustment
             human_joints[:, spine_joint_idx, -1] -= 0.06
-            smpl_scale = getattr(self.constants, "DEFAULT_SCALE_FACTOR", None) or 1.0
+            smpl_scale = self.constants.ROBOT_HEIGHT / 1.7
 
             human_joints = preprocess_motion_data(human_joints, self, toe_names, smpl_scale)
             demo_joints_for_contact = self.demo_joints
@@ -629,7 +709,9 @@ class RetargetingEvaluator:
             toe_names,
         )
         sliding_duration, max_toe_sliding_velocities = self.detect_foot_sliding(
-            q_retarget, contact_sequences[: q_retarget.shape[0]]
+            q_retarget,
+            contact_sequences[: q_retarget.shape[0]],
+            toe_names,
         )
 
         opt_cost = rt_res_data["cost"]

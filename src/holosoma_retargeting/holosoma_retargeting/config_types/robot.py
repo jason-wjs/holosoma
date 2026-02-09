@@ -18,6 +18,7 @@ class RobotDefaults(TypedDict):
 _ROBOT_DEFAULTS: dict[str, RobotDefaults] = {
     "g1": {"robot_dof": 29, "robot_height": 1.32, "object_name": "ground"},
     "t1": {"robot_dof": 23, "robot_height": 1.2, "object_name": "ground"},
+    "adam_pro": {"robot_dof": 29, "robot_height": 1.67, "object_name": "ground"},
 }
 
 
@@ -144,6 +145,18 @@ class RobotConfig:
                 "left_foot_sphere_5_link",
                 "right_foot_sphere_5_link",
             ]
+        if self.robot_type == "adam_pro":
+            # Use foot patch markers (1..4) for sticking; keep sphere_5 as toe target for retargeting mapping.
+            return [
+                "left_foot_sphere_1_link",
+                "right_foot_sphere_1_link",
+                "left_foot_sphere_2_link",
+                "right_foot_sphere_2_link",
+                "left_foot_sphere_3_link",
+                "right_foot_sphere_3_link",
+                "left_foot_sphere_4_link",
+                "right_foot_sphere_4_link",
+            ]
         raise ValueError(f"Invalid robot type: {self.robot_type}")
 
     FOOT_STICKING_LINKS = property(
@@ -169,6 +182,35 @@ class RobotConfig:
                     "33": -0.1,  # left wrist
                     "34": -0.1,
                     "35": -0.05,
+                }
+            )
+        elif self.robot_type == "adam_pro":
+            # qpos indices:
+            #   left knee: 10, right knee: 16
+            #   waist: 19=waistRoll, 20=waistPitch, 21=waistYaw
+            #   left arm: 22/23/24=shoulder pitch/roll/yaw, 25=elbow, 26/27/28=wrist yaw/pitch/roll
+            #   right arm: 29/30/31=shoulder pitch/roll/yaw, 32=elbow, 33/34/35=wrist yaw/pitch/roll
+            base.update(
+                {
+                    "10": 0.12,
+                    "16": 0.12,
+                    "19": -0.18,
+                    "20": -0.35,
+                    "21": -0.829,
+                    "22": -2.8,
+                    "23": -0.5,
+                    "24": -2.0,
+                    "25": -2.496,
+                    "26": -0.6,
+                    "27": -0.45,
+                    "28": -0.45,
+                    "29": -2.8,
+                    "30": -2.4,
+                    "31": -2.0,
+                    "32": -2.496,
+                    "33": -0.6,
+                    "34": -0.45,
+                    "35": -0.45,
                 }
             )
 
@@ -197,6 +239,32 @@ class RobotConfig:
                     "35": 0.05,
                 }
             )
+        elif self.robot_type == "adam_pro":
+            # qpos indices:
+            #   waist: 19=waistRoll, 20=waistPitch, 21=waistYaw
+            #   left arm: 22/23/24=shoulder pitch/roll/yaw, 25=elbow, 26/27/28=wrist yaw/pitch/roll
+            #   right arm: 29/30/31=shoulder pitch/roll/yaw, 32=elbow, 33/34/35=wrist yaw/pitch/roll
+            base.update(
+                {
+                    "19": 0.18,
+                    "20": 0.75,
+                    "21": 0.829,
+                    "22": 1.8,
+                    "23": 2.4,
+                    "24": 2.0,
+                    "25": -0.1,
+                    "26": 0.6,
+                    "27": 0.45,
+                    "28": 0.45,
+                    "29": 1.8,
+                    "30": 0.5,
+                    "31": 2.0,
+                    "32": -0.1,
+                    "33": 0.6,
+                    "34": 0.45,
+                    "35": 0.45,
+                }
+            )
 
         return base
 
@@ -209,6 +277,29 @@ class RobotConfig:
 
         if self.robot_type == "g1":
             return {"19": 0.2, "20": 0.2}  # waist yaw, waist roll
+        if self.robot_type == "adam_pro":
+            # qpos indices:
+            #   left knee: 10, right knee: 16
+            #   waist: 19=waistRoll, 20=waistPitch, 21=waistYaw
+            #   left arm: 22/23/24=shoulder pitch/roll/yaw, 25=elbow
+            #   right arm: 29/30/31=shoulder pitch/roll/yaw, 32=elbow
+            return {
+                # Keep these low: MANUAL_COST biases joints toward 0 rad;
+                # lower bounds above are the primary anti-hyperextension safeguard.
+                "10": 0.03,
+                "16": 0.03,
+                "19": 0.2,
+                "20": 0.2,
+                "21": 0.2,
+                "22": 0.05,
+                "23": 0.05,
+                "24": 0.05,
+                "25": 0.1,
+                "29": 0.05,
+                "30": 0.05,
+                "31": 0.05,
+                "32": 0.1,
+            }
         return {}
 
     MANUAL_COST = property(_manual_cost, doc="Get manual cost weights.")
@@ -222,6 +313,9 @@ class RobotConfig:
             return np.arange(19)
         if self.robot_type == "t1":
             return np.concatenate([np.arange(7), np.arange(11, 23)])
+        if self.robot_type == "adam_pro":
+            # Lower-body (0..11) + waist (12..14).
+            return np.arange(15)
         # Default: return empty array if robot type not defined (nominal tracking not used)
         return np.array([], dtype=int)
 

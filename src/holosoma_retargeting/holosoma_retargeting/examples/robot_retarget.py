@@ -214,7 +214,8 @@ def load_motion_data(
             spine_joint_idx = constants.DEMO_JOINTS.index("Spine1")
             # LAFAN-specific spine adjustment
             human_joints[:, spine_joint_idx, -1] -= 0.06
-            smpl_scale = motion_data_config.default_scale_factor or 1.0
+            # LAFAN data is normalized to ~1.7m subjects; scale per robot height.
+            smpl_scale = constants.ROBOT_HEIGHT / 1.7
         elif data_format == "smplh":  # smplh
             pt_path = data_path / f"{task_name}.pt"
             if not pt_path.exists():
@@ -663,7 +664,16 @@ def main(cfg: RetargetingConfig) -> None:
 
     # Preprocess motion data
     if task_type == "robot_only":
-        human_joints = preprocess_motion_data(human_joints, retargeter, toe_names, smpl_scale)
+        ground_height_percentile = 5.0 if data_format == "optitrack" else 0.0
+        mat_height = 0.0 if data_format == "optitrack" else 0.1
+        human_joints = preprocess_motion_data(
+            human_joints,
+            retargeter,
+            toe_names,
+            smpl_scale,
+            mat_height=mat_height,
+            ground_height_percentile=ground_height_percentile,
+        )
     elif task_type in {"object_interaction", "climbing"}:
         human_joints, object_poses, object_moving_frame_idx = preprocess_motion_data(
             human_joints,
