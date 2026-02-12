@@ -107,6 +107,18 @@ def create_task_constants(
     for attr, value in motion_data_config.legacy_constants().items():
         setattr(task_constants, attr, value)
 
+    # Task-aware mapping override for Adam Pro object interaction:
+    # use hand EE markers only in object mode, while keeping robot-only mappings unchanged.
+    if task_type == "object_interaction" and robot_config.robot_type == "adam_pro":
+        joint_mapping = dict(task_constants.JOINTS_MAPPING)
+        for left_key in ("L_Wrist", "LeftHand"):
+            if left_key in joint_mapping:
+                joint_mapping[left_key] = "left_hand_ee_link"
+        for right_key in ("R_Wrist", "RightHand"):
+            if right_key in joint_mapping:
+                joint_mapping[right_key] = "right_hand_ee_link"
+        task_constants.JOINTS_MAPPING = joint_mapping
+
     # Task-specific object setup
     if task_type == "robot_only":
         obj_name = task_config.object_name or "ground"
