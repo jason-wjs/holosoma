@@ -8,7 +8,7 @@ Holosoma is a comprehensive humanoid robotics framework for training and deployi
 
 - **Multi-simulator training**: IsaacGym, IsaacSim, MJWarp (MuJoCo Warp), and MuJoCo (inference only)
 - **Multiple RL algorithms**: PPO and FastSAC
-- **Robot support**: Unitree G1 and Booster T1 humanoids
+- **Robot support**: Unitree G1, Booster T1, and Adam Pro humanoids
 - **Task types**: Locomotion (velocity tracking) and whole-body tracking (WBT)
 - **End-to-end pipeline**: From training to deployment (sim-to-sim and sim-to-real)
 - **Motion retargeting**: Converting human motion capture data to robot motions
@@ -255,9 +255,73 @@ bash demo_scripts/demo_omomo_wb_tracking.sh
 bash demo_scripts/demo_lafan_wb_tracking.sh
 ```
 
+## Motion Retargeting
+
+The retargeting package (`holosoma_retargeting`) converts human motion capture data to robot motions.
+
+### Supported Data Formats
+
+- **SMPL-H**: Whole-body motion with hands (from OMOMO, InterMimic)
+- **LAFAN**: BVH-based motion data (requires conversion to `.npy`)
+- **SMPL-X**: AMASS dataset format (requires conversion)
+- **OptiTrack**: Custom `.pkl` format from motion capture sessions
+
+### Retargeting Task Types
+
+- `robot_only`: Retarget human motion to robot without objects/terrain
+- `object_interaction`: Preserve interactions with objects (boxes, tools)
+- `climbing`: Terrain interaction with climbing motions
+
+### Bash Script Entry Points
+
+Convenient scripts are provided in `scripts/retargeting/` for common workflows:
+
+```bash
+# Single clip retargeting (default: OptiTrack + Adam Pro)
+bash scripts/retargeting/retarget_single_clip.sh
+
+# Batch retargeting (default: Adam Pro, OptiTrack)
+bash scripts/retargeting/retarget_batch_clips.sh
+
+# Replay retargeted result in Viser
+bash scripts/retargeting/replay_viser.sh
+
+# Quantitative evaluation (default: Adam Pro, robot_only, OMOMO)
+bash scripts/retargeting/eval.sh
+
+# Data conversion scripts
+bash scripts/retargeting/convert_lafan_bvh_to_npy.sh
+bash scripts/retargeting/convert_amass_smplx_to_npz.sh
+bash scripts/retargeting/convert_optitrack_pkl_to_npz.sh
+```
+
+Override default settings with environment variables:
+```bash
+ROBOT=g1 DATA_FORMAT=optitrack DATA_DIR=demo_data/optitrack_npz \
+SAVE_DIR=demo_results_parallel/g1/robot_only/optitrack \
+bash scripts/retargeting/retarget_batch_clips.sh
+```
+
+### Viser Visualization
+
+Visualize retargeted results using the Viser player:
+```bash
+# Robot-only results
+python src/holosoma_retargeting/holosoma_retargeting/viser_player.py \
+    --robot_urdf models/g1/g1_29dof.urdf \
+    --qpos_npz demo_results_parallel/g1/robot_only/omomo/sub3_largebox_003_original.npz
+
+# Object-interaction results
+python src/holosoma_retargeting/holosoma_retargeting/viser_player.py \
+    --robot_urdf models/g1/g1_29dof.urdf \
+    --object_urdf models/largebox/largebox.urdf \
+    --qpos_npz demo_results_parallel/g1/object_interaction/omomo/sub3_largebox_003_original.npz
+```
+
 ## Important Constraints
 
 - **IsaacSim**: Requires Ubuntu 22.04 or later
 - **MJWarp**: Beta support; Warp-lang pinned to version 1.10.0
 - **Robot SDKs**: Platform-specific wheels (x86_64 and aarch64 supported)
 - **Headless rendering**: Requires special configuration for video recording on servers without display
+- **Adam Pro retargeting**: Hand end-effector markers are under refinement; for robot-only mode, rely on wrist-based behavior and ignore hand EE markers

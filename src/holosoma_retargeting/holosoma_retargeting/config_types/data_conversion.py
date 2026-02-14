@@ -114,6 +114,9 @@ class DataConversionConfig:
     use_omniretarget_data: bool = False
     """Use OmniRetarget data format."""
 
+    no_viewer: bool = False
+    """Disable MuJoCo viewer (for headless environments)."""
+
     # --- Nested configs ---
     robot_config: RobotConfig = field(default_factory=lambda: RobotConfig(robot_type="g1"))
     """Robot configuration (nested - can override robot_urdf_file, robot_dof, etc.
