@@ -75,6 +75,21 @@ _AUGMENTATION_TRANSLATION = np.array([0.2, 0.0, 0.0])
 TaskType = Literal["robot_only", "object_interaction", "climbing"]
 # DataFormat is imported from config_types.data_type
 
+# Adam Pro robot-only hip constraint profile (moderate, asymmetry-preserving).
+# Indices are qpos indices in the retargeting optimization state when q_a_init_idx == -7.
+_ADAM_PRO_ROBOT_ONLY_HIP_LB = {
+    "8": -0.499,   # left hip roll
+    "9": -0.628,   # left hip yaw
+    "14": -1.371,  # right hip roll
+    "15": -0.628,  # right hip yaw
+}
+_ADAM_PRO_ROBOT_ONLY_HIP_UB = {
+    "8": 1.371,   # left hip roll
+    "9": 0.628,   # left hip yaw
+    "14": 0.499,  # right hip roll
+    "15": 0.628,  # right hip yaw
+}
+
 
 # ----------------------------- Helper Functions -----------------------------
 
@@ -106,6 +121,16 @@ def create_task_constants(
     # Copy legacy motion data constants (upper-case for compatibility)
     for attr, value in motion_data_config.legacy_constants().items():
         setattr(task_constants, attr, value)
+
+    # Robot-only Adam Pro profile: apply hip roll/yaw manual bounds only.
+    # Keep manual costs untouched (no hip zero-centering prior requested).
+    if task_type == "robot_only" and robot_config.robot_type == "adam_pro":
+        manual_lb = dict(task_constants.MANUAL_LB)
+        manual_ub = dict(task_constants.MANUAL_UB)
+        manual_lb.update(_ADAM_PRO_ROBOT_ONLY_HIP_LB)
+        manual_ub.update(_ADAM_PRO_ROBOT_ONLY_HIP_UB)
+        task_constants.MANUAL_LB = manual_lb
+        task_constants.MANUAL_UB = manual_ub
 
     # Task-aware mapping override for Adam Pro object interaction:
     # use hand EE markers only in object mode, while keeping robot-only mappings unchanged.
