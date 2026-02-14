@@ -9,6 +9,7 @@ Holosoma is a comprehensive humanoid robotics framework for training and deployi
 - **Multi-simulator training**: IsaacGym, IsaacSim, MJWarp (MuJoCo Warp), and MuJoCo (inference only)
 - **Multiple RL algorithms**: PPO and FastSAC
 - **Robot support**: Unitree G1, Booster T1, and Adam Pro humanoids
+- **WBT support**: Unitree G1, Booster T1, and Adam Pro humanoids (Adam Pro support added in February 2026)
 - **Task types**: Locomotion (velocity tracking) and whole-body tracking (WBT)
 - **End-to-end pipeline**: From training to deployment (sim-to-sim and sim-to-real)
 - **Motion retargeting**: Converting human motion capture data to robot motions
@@ -115,6 +116,10 @@ Available experiment presets (in `holosoma/config_values/experiment.py`):
 - `exp:g1-29dof-wbt-fast-sac` - G1 WBT with FastSAC
 - `exp:g1-29dof-wbt-w-object` - G1 WBT with objects, PPO
 - `exp:g1-29dof-wbt-fast-sac-w-object` - G1 WBT with objects, FastSAC
+- `exp:adam_pro-30dof-wbt` - Adam Pro WBT with PPO
+- `exp:adam_pro-30dof-wbt-fast-sac` - Adam Pro WBT with FastSAC
+- `exp:adam_pro-30dof-wbt-w-object` - Adam Pro WBT with objects, PPO
+- `exp:adam_pro-30dof-wbt-fast-sac-w-object` - Adam Pro WBT with objects, FastSAC
 
 ### Multi-GPU Training
 
