@@ -5,13 +5,24 @@ from holosoma.config_types.experiment import ExperimentConfig
 from holosoma.config_values.loco.adam_pro.experiment import adam_pro_29dof, adam_pro_29dof_fast_sac
 from holosoma.config_values.loco.g1.experiment import g1_29dof, g1_29dof_fast_sac
 from holosoma.config_values.loco.t1.experiment import t1_29dof, t1_29dof_fast_sac
-from holosoma.config_values.wbt.adam_pro.experiment import adam_pro_29dof_wbt, adam_pro_29dof_wbt_fast_sac
-from holosoma.config_values.wbt.g1.experiment import (
-    g1_29dof_wbt,
-    g1_29dof_wbt_fast_sac,
-    g1_29dof_wbt_fast_sac_w_object,
-    g1_29dof_wbt_w_object,
-)
+
+# Lazy imports to avoid circular dependency
+def _get_adam_pro_wbt_configs():
+    from holosoma.config_values.wbt.adam_pro.experiment import adam_pro_29dof_wbt, adam_pro_29dof_wbt_fast_sac
+    return adam_pro_29dof_wbt, adam_pro_29dof_wbt_fast_sac
+
+def _get_g1_wbt_configs():
+    from holosoma.config_values.wbt.g1.experiment import (
+        g1_29dof_wbt,
+        g1_29dof_wbt_fast_sac,
+        g1_29dof_wbt_fast_sac_w_object,
+        g1_29dof_wbt_w_object,
+    )
+    return g1_29dof_wbt, g1_29dof_wbt_fast_sac, g1_29dof_wbt_fast_sac_w_object, g1_29dof_wbt_w_object
+
+# Lazy load the WBT configs to avoid circular imports
+adam_pro_29dof_wbt, adam_pro_29dof_wbt_fast_sac = _get_adam_pro_wbt_configs()
+g1_29dof_wbt, g1_29dof_wbt_fast_sac, g1_29dof_wbt_fast_sac_w_object, g1_29dof_wbt_w_object = _get_g1_wbt_configs()
 
 DEFAULTS = {
     "adam_pro_29dof": adam_pro_29dof,
