@@ -116,10 +116,8 @@ Available experiment presets (in `holosoma/config_values/experiment.py`):
 - `exp:g1-29dof-wbt-fast-sac` - G1 WBT with FastSAC
 - `exp:g1-29dof-wbt-w-object` - G1 WBT with objects, PPO
 - `exp:g1-29dof-wbt-fast-sac-w-object` - G1 WBT with objects, FastSAC
-- `exp:adam_pro-30dof-wbt` - Adam Pro WBT with PPO
-- `exp:adam_pro-30dof-wbt-fast-sac` - Adam Pro WBT with FastSAC
-- `exp:adam_pro-30dof-wbt-w-object` - Adam Pro WBT with objects, PPO
-- `exp:adam_pro-30dof-wbt-fast-sac-w-object` - Adam Pro WBT with objects, FastSAC
+- `exp:adam-pro-29dof-wbt` - Adam Pro WBT with PPO
+- `exp:adam-pro-29dof-wbt-fast-sac` - Adam Pro WBT with FastSAC
 
 ### Multi-GPU Training
 

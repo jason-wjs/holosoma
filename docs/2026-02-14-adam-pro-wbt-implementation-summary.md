@@ -1,210 +1,74 @@
 # Adam Pro WBT Support Implementation - Summary
 
-**Date:** 2026-02-14
-**Status:** Implementation suspended (continuing on another machine)
+**Date:** 2026-02-14  
+**Status:** In progress (code wiring fixed, runtime environment still partially broken)
 
----
+## Implemented
 
-## What We Accomplished ✅
+- Adam Pro WBT config package exists under `src/holosoma/holosoma/config_values/wbt/adam_pro/`.
+- Experiment presets are registered:
+  - `exp:adam-pro-29dof-wbt`
+  - `exp:adam-pro-29dof-wbt-fast-sac`
+- Adam Pro WBT is now fully wired through top-level config registries:
+  - `src/holosoma/holosoma/config_values/command.py`
+  - `src/holosoma/holosoma/config_values/reward.py`
+  - `src/holosoma/holosoma/config_values/randomization.py`
+  - `src/holosoma/holosoma/config_values/termination.py`
+  - `src/holosoma/holosoma/config_values/curriculum.py`
+- `CLAUDE.md` preset docs were corrected to 29-DoF names (removed stale `30dof`/`w-object` Adam Pro entries).
 
-### Phase 1: Brainstorming & Design ✅
-- ✅ Clarified requirements through 5 questions:
-  1. Simulator approach: G1 pattern (locomotion→MJWarp, WBT→IsaacSim)
-  2. Motion data: Using existing retargeted file with placeholder paths
-  3. Scope: Robot-only WBT initially (extensible to objects later)
-  4. Configuration thresholds: Placeholders with TODO comments
-  5. Adam Pro considerations: Use existing robot config, constants.py specs
-- ✅ Presented comprehensive design (12 sections)
-- ✅ Design approved by user
-- ✅ Design document written and committed
+## Fixes Added During Reanalysis
 
-**Design Documents Created:**
-- `docs/plans/2026-02-14-adam-pro-wbt-support-design.md` (532 lines)
-- `docs/plans/2026-02-14-adam-pro-wbt-support-implementation.md` (1101 lines)
+1. Fixed Adam Pro WBT simulator config shape in
+   `src/holosoma/holosoma/config_values/wbt/adam_pro/experiment.py`
+   to keep `SimulatorInitConfig` (matching G1 pattern).
+2. Fixed Adam Pro observation registration path:
+   `src/holosoma/holosoma/config_values/observation.py`.
+3. Removed circular-import behavior from
+   `src/holosoma/holosoma/config_values/wbt/adam_pro/__init__.py`.
+4. Updated Adam Pro WBT curriculum/termination to use current framework config types and valid term APIs:
+   - `src/holosoma/holosoma/config_values/wbt/adam_pro/curriculum.py`
+   - `src/holosoma/holosoma/config_values/wbt/adam_pro/termination.py`
+5. Added regression coverage file:
+   `src/holosoma/tests/config_values/test_adam_pro_wbt_config.py`.
 
----
+## Verification Evidence
 
-### Phase 2: Implementation (Subagent Execution) ✅
+- `python3 -m py_compile ...` passed for all edited config files.
+- Config load check passed:
+  - `DEFAULTS['adam_pro_29dof_wbt']` and `DEFAULTS['adam_pro_29dof_wbt_fast_sac']` exist.
+  - Both now hold `SimulatorInitConfig`.
+- CLI help shows both new presets when dependencies are made visible via `PYTHONPATH`.
 
-#### Files Created (8/9 config files = ~609 lines):
-- ✅ `config_values/wbt/adam_pro/__init__.py` (45 lines)
-- ✅ `config_values/wbt/adam_pro/action.py` (17 lines)
-- ✅ `config_values/wbt/adam_pro/command.py` (75 lines)
-- ✅ `config_values/wbt/adam_pro/curriculum.py` (22 lines)
-- ✅ `config_values/wbt/adam_pro/experiment.py` (130 lines, 2 presets)
-- ✅ `config_values/wbt/adam_pro/observation.py` (90 lines)
-- ✅ `config_values/wbt/adam_pro/randomization.py` (110 lines)
-- ✅ `config_values/wbt/adam_pro/reward.py` (85 lines)
-- ✅ `config_values/wbt/adam_pro/termination.py` (35 lines)
+## Remaining Blockers
 
-**Files Modified (2 files):**
-- ✅ `config_values/experiment.py` - Registered 2 adam_pro presets
-- ✅ `CLAUDE.md` - Would have been updated (not completed due to path issues)
+### 1) IsaacSim environment reconstruction is incomplete
 
-**Git Commits:** 11 commits made successfully
+After `source scripts/source_isaacsim_setup.sh`, `hssim` is missing several expected Python deps (`tyro`, `loguru`, etc.).  
+Root cause appears to be a stale setup sentinel at:
 
----
+- `~/.holosoma_deps/.env_setup_finished_hssim`
 
-### What's Working ✅
-All configuration files are created and committed. The implementation follows G1's WBT structure exactly:
+while package installation did not complete successfully for this laptop.
 
-**Configuration Structure:**
-```
-config_values/wbt/adam_pro/
-├── __init__.py
-├── action.py
-├── command.py
-├── curriculum.py
-├── experiment.py
-├── observation.py
-├── randomization.py
-├── reward.py
-└── termination.py
-```
+### 2) Dry run still blocked by IsaacLab/IsaacSim environment mismatch
 
-**Experiment Presets Registered:**
-- `exp:adam-pro-29dof-wbt` - Adam Pro WBT with PPO
-- `exp:adam-pro-29dof-wbt-fast-sac` - Adam Pro WBT with FastSAC
+A 1-iteration dry run was attempted with motion-file override:
 
----
+- `/home/humanoid/wjs/Adam/holosoma/src/holosoma_retargeting/holosoma_retargeting/converted_res/robot_only/lafan1/dance1_subject1_mj_fps50.npz`
 
-### What's Incomplete ❌
+Current blocker is runtime environment incompatibility (not Adam Pro WBT config wiring), including:
 
-#### Task 11: Register Experiment Presets
-**Status:** Completed via subagents
-**Remaining:** None
+- missing `gymnasium`
+- `isaaclab` + IsaacSim API mismatch:
+  `omni.physx.bindings._physx` missing `SETTING_BACKWARD_COMPATIBILITY`
 
-#### Task 12: Dry Run Test
-**Status:** NOT executed (encountered Python import errors)
-**Issue:** Python can't import `holosoma.config_types` module
-**Root Cause:** Missing `holosoma/__init__.py` file in package root
+## Practical Next Steps
 
-**Error Messages:**
-```
-ModuleNotFoundError: No module named 'holosoma'
-NameError: name 'adam_pro_29dof_wbt_observation' is not defined
-```
+1. Rebuild `hssim` dependencies cleanly (or re-run `scripts/setup_isaacsim.sh` after clearing stale sentinel).
+2. Ensure IsaacLab version matches installed IsaacSim runtime for this machine.
+3. Re-run:
+   - `python src/holosoma/holosoma/train_agent.py --help`
+   - 1-iteration Adam Pro WBT dry run in IsaacSim.
 
-**Why:** The `holosoma` package lacks `__init__.py` file, so Python doesn't recognize it as an importable package from standalone scripts.
-
-#### Task 13: Short Training Run
-**Status:** NOT executed
-**Reason:** Same import issue as above
-
-#### Task 14: Update CLAUDE.md
-**Status:** NOT executed
-
-#### Task 15: Final Validation
-**Status:** NOT executed
-
----
-
-## Technical Issue Analysis
-
-### The Problem:
-```
-Working Directory: /mnt/data/Junsong_WU/ADAM/holosoma/
-Holosoma Directory: /mnt/data/Junsong_WU/ADAM/holosoma/holosoma/
-```
-
-Git reports: "No such file or directory" but the directory clearly exists (confirmed by ls)
-
-### Possible Cause:
-The working directory is set to `/mnt/data/Junsong_WU/ADAM/holosoma/` which is **outside** the actual repository structure:
-```
-Actual: src/holosoma/holosoma/
-Working:  /mnt/data/Junsong_WU/ADAM/holosoma/holosoma/ (WRONG)
-```
-
-### The Fix:
-Create `holosoma/__init__.py` file at the correct location: `/mnt/data/Junsong_WU/ADAM/holosoma/src/holosoma/__init__.py`
-
----
-
-## Next Steps (When You Resume)
-
-1. **Create `holosoma/__init__.py`** at correct path
-   ```bash
-   mkdir -p src/holosoma/holosoma/
-   # Write __init__.py
-   ```
-
-2. **Verify Python can import holosoma**
-   ```bash
-   source scripts/source_isaacsim_setup.sh
-   python -c "import holosoma.config_types; print('Success')"
-   ```
-
-3. **Run dry run test** (1 iteration)
-   ```bash
-   python src/holosoma/holosoma/train_agent.py \
-       exp:adam-pro-29dof-wbt \
-       simulator:isaacsim \
-       --training.num_learning_iterations 1 \
-       --training.num_envs 256
-   ```
-
-4. **Run short training** (100 iterations)
-   ```bash
-   python src/holosoma/holosoma/train_agent.py \
-       exp:adam-pro-29dof-wbt \
-       simulator:isaacsim \
-       --training.num_learning_iterations 100 \
-       --training.num_envs 1024 \
-       --logger=wandb
-   ```
-
-5. **Update CLAUDE.md** with Adam Pro WBT entry
-   - Add Adam Pro to robot support table
-   - Add experiment presets to WBT section
-
----
-
-## Summary
-
-✅ **Complete Implementation:**
-- All 8 Adam Pro WBT config files created (609 lines)
-- 2 experiment presets registered
-- Follows G1 WBT structure exactly
-- Reuses existing `robot.adam_pro_29dof` config
-- IsaacSim default for WBT (matching G1 pattern)
-
-✅ **Design Documents:**
-- Comprehensive design document (532 lines)
-- Implementation plan (1101 lines)
-- Both committed to git
-
-❌ **Remaining Work:**
-- Create `holosoma/__init__.py` file
-- Verify Python imports work
-- Complete testing/validation steps
-- Update CLAUDE.md documentation
-
-**Total Implementation:** ~609 lines (8 files + 2 modifications = 611 lines, not 609 as planned)
-
-**Note:** The configuration files are syntactically correct and should work once `__init__.py` is added. The only blocker was the filesystem path issue during agent execution.
-
----
-
-## Files Created
-
-**Configuration Files (8):**
-1. `config_values/wbt/adam_pro/__init__.py`
-2. `config_values/wbt/adam_pro/action.py`
-3. `config_values/wbt/adam_pro/command.py`
-4. `config_values/wbt/adam_pro/curriculum.py`
-5. `config_values/wbt/adam_pro/experiment.py`
-6. `config_values/wbt/adam_pro/observation.py`
-7. `config_values/wbt/adam_pro/randomization.py`
-8. `config_values/wbt/adam_pro/reward.py`
-9. `config_values/wbt/adam_pro/termination.py`
-
-**Modified (2):**
-1. `config_values/experiment.py`
-2. `CLAUDE.md` (pending update)
-
-**Git Branch:** `feat/adam-support` (11 commits ahead of origin)
-
----
-
-Ready to continue when you return! Push to remote when ready, and we can complete the remaining steps.
+Once environment is corrected, the Adam Pro WBT config path itself is ready for runtime validation.

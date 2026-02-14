@@ -1,28 +1,44 @@
 """Whole Body Tracking termination presets for Adam Pro robot."""
 
-from holosoma.config_types.termination import TerminationManagerCfg, TermCfg
+from holosoma.config_types.termination import TerminationManagerCfg, TerminationTermCfg
 
 adam_pro_29dof_wbt_termination = TerminationManagerCfg(
     terms={
-        "bad_ref_tracking": TermCfg(
-            func="holosoma.managers.termination.terms.wbt:bad_ref_tracking",
-            params={
-                "ref_pos_error_threshold": 0.5,  # TODO: Tune for Adam Pro (meters)
-                "ref_ori_error_threshold": 1.0,  # TODO: Tune for Adam Pro (radians)
-                "velocity_error_threshold": 2.0,  # TODO: Tune for Adam Pro (m/s)
-            },
+        "timeout": TerminationTermCfg(
+            func="holosoma.managers.termination.terms.common:timeout_exceeded",
+            is_timeout=True,
         ),
-        "bad_joint_pos_limits": TermCfg(
-            func="holosoma.managers.termination.terms.common:bad_joint_pos_limits",
-            params={
-                "clip_limit_to_violation_ratio": 0.98,  # TODO: Adjust for Adam Pro
-            },
+        "motion_ends": TerminationTermCfg(
+            func="holosoma.managers.termination.terms.wbt:motion_ends",
         ),
-        "bad_contact": TermCfg(
-            func="holosoma.managers.termination.terms.common:bad_contact",
+        "bad_tracking": TerminationTermCfg(
+            func="holosoma.managers.termination.terms.wbt:BadTracking",
             params={
-                "max_undesired_contact_force": 200.0,  # TODO: Tune for Adam Pro (Newtons)
-                "max_contact_duration": 0.1,  # seconds
+                "bad_ref_pos_threshold": 0.5,  # TODO: Tune for Adam Pro
+                "bad_ref_ori_threshold": 0.8,  # TODO: Tune for Adam Pro
+                "bad_motion_body_pos_threshold": 0.25,  # TODO: Tune for Adam Pro
+                "body_names_to_track": [
+                    "pelvis",
+                    "torso_link",
+                    "left_hip_pitch_link",
+                    "left_knee_link",
+                    "left_ankle_roll_link",
+                    "right_hip_pitch_link",
+                    "right_knee_link",
+                    "right_ankle_roll_link",
+                    "left_shoulder_pitch_link",
+                    "left_elbow_link",
+                    "left_wrist_yaw_link",
+                    "right_shoulder_pitch_link",
+                    "right_elbow_link",
+                    "right_wrist_yaw_link",
+                ],
+                "bad_motion_body_pos_body_names": [
+                    "left_ankle_roll_link",
+                    "right_ankle_roll_link",
+                    "left_wrist_yaw_link",
+                    "right_wrist_yaw_link",
+                ],
             },
         ),
     },

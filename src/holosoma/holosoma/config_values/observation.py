@@ -11,6 +11,10 @@ def _get_adam_pro_29dof_wbt_observation():
     from holosoma.config_values.wbt.adam_pro.observation import adam_pro_29dof_wbt_observation
     return adam_pro_29dof_wbt_observation
 
+
+adam_pro_29dof_wbt_observation = _get_adam_pro_29dof_wbt_observation()
+
+
 DEFAULTS = {
     "none": none,
     "adam_pro_29dof_loco_single_wolinvel": adam_pro_29dof_loco_single_wolinvel,
