@@ -2,7 +2,7 @@
 
 from dataclasses import replace
 
-from holosoma.config_types.experiment import ExperimentConfig, NightlyConfig, TrainingConfig
+from holosoma.config_types.experiment import ExperimentConfig, TrainingConfig
 from holosoma.config_values import (
     action,
     algo,
@@ -42,11 +42,8 @@ adam_pro_29dof_wbt = ExperimentConfig(
     simulator=replace(
         simulator.isaacsim,
         config=replace(
-            simulator.isaacsim.config,
-            sim=replace(
-                simulator.isaacsim.config.sim,
-                max_episode_length_s=10.0,  # TODO: Adjust to motion clip length
-            ),
+            simulator.isaacsim.config.sim,
+            max_episode_length_s=10.0,  # TODO: Adjust to motion clip length
         ),
     ),
     robot=replace(
@@ -96,11 +93,8 @@ adam_pro_29dof_wbt_fast_sac = ExperimentConfig(
     simulator=replace(
         simulator.isaacsim,
         config=replace(
-            simulator.isaacsim.config,
-            sim=replace(
-                simulator.isaacsim.config.sim,
-                max_episode_length_s=10.0,
-            ),
+            simulator.isaacsim.config.sim,
+            max_episode_length_s=10.0,
         ),
     ),
     robot=replace(
