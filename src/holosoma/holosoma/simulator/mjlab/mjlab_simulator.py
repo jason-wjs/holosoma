@@ -88,10 +88,31 @@ class MJLab(BaseSimulator):
                 "Use scripts/setup_mjlab.sh and run in the hsmjlab environment."
             )
 
+        sensors = ()
+        contact_sensor_name = "robot_contact_forces"
+        contact_body_names = tuple(self.robot_config.body_names)
+        if contact_body_names:
+            try:
+                from mjlab.sensor import ContactMatch, ContactSensorCfg
+
+                sensors = (
+                    ContactSensorCfg(
+                        name=contact_sensor_name,
+                        primary=ContactMatch(mode="body", pattern=contact_body_names, entity="robot"),
+                        fields=("force",),
+                        reduce="netforce",
+                        num_slots=1,
+                        history_length=max(1, int(self.simulator_config.contact_sensor_history_length)),
+                    ),
+                )
+            except Exception as exc:  # pragma: no cover - defensive for optional API shifts
+                logger.warning(f"Failed to configure MJLAB contact sensor: {exc}")
+
         entity_cfg = build_entity_cfg(self.robot_config)
         scene_cfg = SceneCfg(
             num_envs=self.num_envs,
             entities={"robot": entity_cfg},
+            sensors=sensors,
         )
         self._scene = Scene(scene_cfg, device=self.device)
         model = self._scene.compile()
@@ -104,7 +125,15 @@ class MJLab(BaseSimulator):
         self.num_dof = len(self.dof_names)
         self.num_bodies = len(self.body_names)
         self._body_name_to_index = {name: i for i, name in enumerate(self.body_names)}
-        self._contact_slot_to_body_index = list(range(self.num_bodies))
+        self._contact_sensor = self._scene.sensors.get(contact_sensor_name)
+        self._contact_slot_to_body_index = []
+        if self._contact_sensor is not None:
+            for body_name in contact_body_names:
+                body_idx = self._body_name_to_index.get(body_name)
+                if body_idx is not None:
+                    self._contact_slot_to_body_index.append(body_idx)
+        if not self._contact_slot_to_body_index:
+            self._contact_slot_to_body_index = list(range(self.num_bodies))
 
         self.dof_pos = torch.zeros((self.num_envs, self.num_dof), dtype=torch.float32, device=self.device)
         self.dof_vel = torch.zeros_like(self.dof_pos)
