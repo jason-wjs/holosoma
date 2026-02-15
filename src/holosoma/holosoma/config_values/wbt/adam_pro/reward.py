@@ -51,23 +51,21 @@ adam_pro_29dof_wbt_reward = RewardManagerCfg(
         ),
         # === Regularization ===
         "penalty_action_rate": RewardTermCfg(
-            func="holosoma.managers.reward.terms.common:penalty_action_rate",
-            params={},
+            func="holosoma.managers.reward.terms.wbt:penalty_action_rate",
             weight=-0.1,  # PPO standard
         ),
         "limits_dof_pos": RewardTermCfg(
-            func="holosoma.managers.reward.terms.common:limits_dof_pos",
+            func="holosoma.managers.reward.terms.wbt:limits_dof_pos",
             params={
-                "tolerance": 0.01,  # TODO: Adjust for Adam Pro joint limits
+                "soft_dof_pos_limit": 0.9,  # TODO: Adjust for Adam Pro joint limits
             },
             weight=-100.0,
         ),
         "undesired_contacts": RewardTermCfg(
-            func="holosoma.managers.reward.terms.common:undesired_contacts",
+            func="holosoma.managers.reward.terms.wbt:UndesiredContacts",
             params={
-                "filter_params": {
-                    "max_force": 1.0,  # TODO: Tune for Adam Pro contact parameters
-                },
+                "threshold": 1.0,
+                "undesired_contacts_body_names": "^(?!toeLeft$)(?!toeRight$).+$",
             },
             weight=-0.5,
         ),

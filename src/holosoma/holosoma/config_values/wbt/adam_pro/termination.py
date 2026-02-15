@@ -39,6 +39,10 @@ adam_pro_29dof_wbt_termination = TerminationManagerCfg(
                     "left_wrist_yaw_link",
                     "right_wrist_yaw_link",
                 ],
+                # Required by BadTracking even for robot-only clips.
+                # These thresholds are only used when motion.has_object=True.
+                "bad_object_pos_threshold": 0.25,
+                "bad_object_ori_threshold": 0.8,
             },
         ),
     },

@@ -1,74 +1,54 @@
 # Adam Pro WBT Support Implementation - Summary
 
-**Date:** 2026-02-14  
-**Status:** In progress (code wiring fixed, runtime environment still partially broken)
+**Date:** 2026-02-15  
+**Status:** Runtime-validated in IsaacSim (1-iteration dry run passes)
 
-## Implemented
+## What Is Implemented
 
 - Adam Pro WBT config package exists under `src/holosoma/holosoma/config_values/wbt/adam_pro/`.
-- Experiment presets are registered:
+- Experiment presets are registered and visible in CLI:
   - `exp:adam-pro-29dof-wbt`
   - `exp:adam-pro-29dof-wbt-fast-sac`
-- Adam Pro WBT is now fully wired through top-level config registries:
+- Adam Pro WBT remains wired through top-level registries:
   - `src/holosoma/holosoma/config_values/command.py`
   - `src/holosoma/holosoma/config_values/reward.py`
   - `src/holosoma/holosoma/config_values/randomization.py`
   - `src/holosoma/holosoma/config_values/termination.py`
   - `src/holosoma/holosoma/config_values/curriculum.py`
-- `CLAUDE.md` preset docs were corrected to 29-DoF names (removed stale `30dof`/`w-object` Adam Pro entries).
 
-## Fixes Added During Reanalysis
+## Reanalysis Fixes Added
 
-1. Fixed Adam Pro WBT simulator config shape in
-   `src/holosoma/holosoma/config_values/wbt/adam_pro/experiment.py`
-   to keep `SimulatorInitConfig` (matching G1 pattern).
-2. Fixed Adam Pro observation registration path:
-   `src/holosoma/holosoma/config_values/observation.py`.
-3. Removed circular-import behavior from
-   `src/holosoma/holosoma/config_values/wbt/adam_pro/__init__.py`.
-4. Updated Adam Pro WBT curriculum/termination to use current framework config types and valid term APIs:
-   - `src/holosoma/holosoma/config_values/wbt/adam_pro/curriculum.py`
+1. IsaacSim setup/runtime fixes:
+   - `scripts/setup_isaacsim.sh` now re-validates stale sentinel state, validates IsaacLab ref, uses valid `isaaclab.sh --install` framework syntax, and aligns `wandb` with holosoma pin.
+2. Updated Adam Pro URDF for true 29-DOF IsaacSim actuation:
+   - `src/holosoma/holosoma/data/robots/adam_pro/adam_pro.urdf`
+   - Wrist joints (`wristYaw/Pitch/Roll` on both arms) are now revolute with limits.
+   - Added `left_foot_contact_point` and `right_foot_contact_point` fixed links for parity with existing robot config body names.
+3. Switched Adam Pro WBT experiments back to pure 29-DOF robot profile:
+   - `src/holosoma/holosoma/config_values/wbt/adam_pro/experiment.py`
+4. Fixed Adam Pro WBT reward wiring to current term APIs:
+   - `src/holosoma/holosoma/config_values/wbt/adam_pro/reward.py`
+5. Fixed Adam Pro WBT termination params for current `BadTracking` contract:
    - `src/holosoma/holosoma/config_values/wbt/adam_pro/termination.py`
-5. Added regression coverage file:
-   `src/holosoma/tests/config_values/test_adam_pro_wbt_config.py`.
+6. Added Adam Pro motion name aliasing for IsaacSim body/joint naming mismatch:
+   - `src/holosoma/holosoma/managers/command/terms/wbt.py`
+7. Expanded regression tests:
+   - `src/holosoma/tests/config_values/test_adam_pro_wbt_config.py`
 
 ## Verification Evidence
 
-- `python3 -m py_compile ...` passed for all edited config files.
-- Config load check passed:
-  - `DEFAULTS['adam_pro_29dof_wbt']` and `DEFAULTS['adam_pro_29dof_wbt_fast_sac']` exist.
-  - Both now hold `SimulatorInitConfig`.
-- CLI help shows both new presets when dependencies are made visible via `PYTHONPATH`.
+- `pytest -q src/holosoma/tests/config_values/test_adam_pro_wbt_config.py` passes (`5 passed`).
+- 1-iteration IsaacSim dry run succeeds with motion override:
+  - `python src/holosoma/holosoma/train_agent.py exp:adam-pro-29dof-wbt simulator:isaacsim --algo.config.num-learning-iterations 1 --training.num-envs 16 --logger.video.enabled False --command.setup-terms.motion-command.params.motion-config.motion-file /home/humanoid/wjs/Adam/holosoma/src/holosoma_retargeting/holosoma_retargeting/converted_res/robot_only/lafan1/dance1_subject1_mj_fps50.npz`
+  - Checkpoint/log output observed at:
+    - `logs/WholeBodyTracking/20260214_163122-adam_pro_29dof_wbt-locomotion/`
+  - Training metrics printed and process exits cleanly.
 
-## Remaining Blockers
+## Notes
 
-### 1) IsaacSim environment reconstruction is incomplete
+- Preset names and runtime now both use true Adam Pro 29-DOF in IsaacSim.
 
-After `source scripts/source_isaacsim_setup.sh`, `hssim` is missing several expected Python deps (`tyro`, `loguru`, etc.).  
-Root cause appears to be a stale setup sentinel at:
+## Remaining Work
 
-- `~/.holosoma_deps/.env_setup_finished_hssim`
-
-while package installation did not complete successfully for this laptop.
-
-### 2) Dry run still blocked by IsaacLab/IsaacSim environment mismatch
-
-A 1-iteration dry run was attempted with motion-file override:
-
-- `/home/humanoid/wjs/Adam/holosoma/src/holosoma_retargeting/holosoma_retargeting/converted_res/robot_only/lafan1/dance1_subject1_mj_fps50.npz`
-
-Current blocker is runtime environment incompatibility (not Adam Pro WBT config wiring), including:
-
-- missing `gymnasium`
-- `isaaclab` + IsaacSim API mismatch:
-  `omni.physx.bindings._physx` missing `SETTING_BACKWARD_COMPATIBILITY`
-
-## Practical Next Steps
-
-1. Rebuild `hssim` dependencies cleanly (or re-run `scripts/setup_isaacsim.sh` after clearing stale sentinel).
-2. Ensure IsaacLab version matches installed IsaacSim runtime for this machine.
-3. Re-run:
-   - `python src/holosoma/holosoma/train_agent.py --help`
-   - 1-iteration Adam Pro WBT dry run in IsaacSim.
-
-Once environment is corrected, the Adam Pro WBT config path itself is ready for runtime validation.
+1. Run short stability training (e.g., 100 iterations) and inspect reward/termination behavior.
+2. Optionally add explicit docs note in `CLAUDE.md` that Adam Pro IsaacSim now matches MJCF wrist actuation (29-DOF).

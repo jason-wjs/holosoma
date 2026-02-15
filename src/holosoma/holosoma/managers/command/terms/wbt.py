@@ -42,18 +42,46 @@ class MotionLoader:
 
         logger.info(f"Loading motion file: {motion_file}")
         body_names_in_motion_data, joint_names_in_motion_data = self._load_data_from_motion_npz(motion_file, device)
-        body_indexes = self._get_index_of_a_in_b(robot_body_names, body_names_in_motion_data, device)
+        body_indexes = self._get_index_of_a_in_b(
+            robot_body_names,
+            body_names_in_motion_data,
+            device,
+            allow_missing=True,
+            fallback_name="pelvis",
+        )
         joint_indexes = self._get_index_of_a_in_b(robot_joint_names, joint_names_in_motion_data, device)
 
         self._joint_indexes = joint_indexes
         self._body_indexes = body_indexes
         self.time_step_total = self._joint_pos.shape[0]
 
-    def _get_index_of_a_in_b(self, a_names: List[str], b_names: List[str], device: str = "cpu") -> torch.Tensor:
+    def _get_index_of_a_in_b(
+        self,
+        a_names: List[str],
+        b_names: List[str],
+        device: str = "cpu",
+        *,
+        allow_missing: bool = False,
+        fallback_name: str | None = None,
+    ) -> torch.Tensor:
         indexes = []
+        missing: list[str] = []
+        fallback_idx = b_names.index(fallback_name) if fallback_name in b_names else 0
         for name in a_names:
-            assert name in b_names, f"The specified name ({name}) doesn't exist: {b_names}"
-            indexes.append(b_names.index(name))
+            if name in b_names:
+                indexes.append(b_names.index(name))
+            elif allow_missing:
+                missing.append(name)
+                indexes.append(fallback_idx)
+            else:
+                raise AssertionError(f"The specified name ({name}) doesn't exist: {b_names}")
+        if missing:
+            logger.warning(
+                "Motion file missing {} body names; aliasing to '{}' (first 8: {}).",
+                len(missing),
+                b_names[fallback_idx],
+                ", ".join(missing[:8]),
+            )
         return torch.tensor(indexes, dtype=torch.long, device=device)
 
     def _load_data_from_motion_npz(self, motion_file: str, device: str) -> tuple[list[str], list[str]]:
@@ -251,12 +279,103 @@ class AdaptiveTimestepsSampler:
 #########################################################################################################
 ## Helper functions
 #########################################################################################################
-FAKE_BODY_NAME_ALIASES: dict[str, str] = {
+ADAM_PRO_BODY_NAME_ALIASES: dict[str, str] = {
+    "hipPitchLeft": "left_hip_pitch_link",
+    "hipRollLeft": "left_hip_roll_link",
+    "thighLeft": "left_hip_yaw_link",
+    "shinLeft": "left_knee_link",
+    "anklePitchLeft": "left_ankle_pitch_link",
+    "toeLeft": "left_ankle_roll_link",
+    "hipPitchRight": "right_hip_pitch_link",
+    "hipRollRight": "right_hip_roll_link",
+    "thighRight": "right_hip_yaw_link",
+    "shinRight": "right_knee_link",
+    "anklePitchRight": "right_ankle_pitch_link",
+    "toeRight": "right_ankle_roll_link",
+    "waistRoll_link": "waist_roll_link",
+    "waistPitch_link": "torso_link",
+    "torso": "torso_link",
+    "shoulderPitchLeft": "left_shoulder_pitch_link",
+    "shoulderRollLeft": "left_shoulder_roll_link",
+    "shoulderYawLeft": "left_shoulder_yaw_link",
+    "elbowLeft": "left_elbow_link",
+    "wristYawLeft": "left_wrist_yaw_link",
+    "wristPitchLeft": "left_wrist_pitch_link",
+    "wristRollLeft": "left_wrist_roll_link",
+    "L_thumb_proximal_base": "left_rubber_hand_link",
+    "L_thumb_proximal": "left_thumb_link",
+    "L_thumb_intermediate": "left_thumb_link",
+    "L_thumb_distal": "left_thumb_link",
+    "L_index_proximal": "left_rubber_hand_link",
+    "L_index_distal": "left_rubber_hand_link",
+    "L_middle_proximal": "left_rubber_hand_link",
+    "L_middle_distal": "left_rubber_hand_link",
+    "L_ring_proximal": "left_rubber_hand_link",
+    "L_ring_distal": "left_rubber_hand_link",
+    "L_pinky_proximal": "left_pinky_link",
+    "L_pinky_distal": "left_pinky_link",
+    "shoulderPitchRight": "right_shoulder_pitch_link",
+    "shoulderRollRight": "right_shoulder_roll_link",
+    "shoulderYawRight": "right_shoulder_yaw_link",
+    "elbowRight": "right_elbow_link",
+    "wristYawRight": "right_wrist_yaw_link",
+    "wristPitchRight": "right_wrist_pitch_link",
+    "wristRollRight": "right_wrist_roll_link",
+    "R_thumb_proximal_base": "right_rubber_hand_link",
+    "R_thumb_proximal": "right_thumb_link",
+    "R_thumb_intermediate": "right_thumb_link",
+    "R_thumb_distal": "right_thumb_link",
+    "R_index_proximal": "right_rubber_hand_link",
+    "R_index_distal": "right_rubber_hand_link",
+    "R_middle_proximal": "right_rubber_hand_link",
+    "R_middle_distal": "right_rubber_hand_link",
+    "R_ring_proximal": "right_rubber_hand_link",
+    "R_ring_distal": "right_rubber_hand_link",
+    "R_pinky_proximal": "right_pinky_link",
+    "R_pinky_distal": "right_pinky_link",
+    "neckYaw_link": "torso_link",
+    "neckPitch_link": "torso_link",
+}
+
+BODY_NAME_ALIASES: dict[str, str] = {
     # Fake foot contact bodies are authored in the URDF purely for height computation.
     # They do not exist in the motion-capture dataset, so we alias them back to the
     # closest real body when indexing into motion data. These are not actually used in training.
     "left_foot_contact_point": "left_ankle_roll_link",
     "right_foot_contact_point": "right_ankle_roll_link",
+    **ADAM_PRO_BODY_NAME_ALIASES,
+}
+
+JOINT_NAME_ALIASES: dict[str, str] = {
+    "hipPitch_Left": "left_hip_pitch_joint",
+    "hipRoll_Left": "left_hip_roll_joint",
+    "hipYaw_Left": "left_hip_yaw_joint",
+    "kneePitch_Left": "left_knee_joint",
+    "anklePitch_Left": "left_ankle_pitch_joint",
+    "ankleRoll_Left": "left_ankle_roll_joint",
+    "hipPitch_Right": "right_hip_pitch_joint",
+    "hipRoll_Right": "right_hip_roll_joint",
+    "hipYaw_Right": "right_hip_yaw_joint",
+    "kneePitch_Right": "right_knee_joint",
+    "anklePitch_Right": "right_ankle_pitch_joint",
+    "ankleRoll_Right": "right_ankle_roll_joint",
+    "waistRoll": "waist_roll_joint",
+    "waistPitch": "waist_pitch_joint",
+    "waistYaw": "waist_yaw_joint",
+    "shoulderPitch_Left": "left_shoulder_pitch_joint",
+    "shoulderRoll_Left": "left_shoulder_roll_joint",
+    "shoulderYaw_Left": "left_shoulder_yaw_joint",
+    "elbow_Left": "left_elbow_joint",
+    "wristYaw_Left": "left_wrist_yaw_joint",
+    "wristPitch_Left": "left_wrist_pitch_joint",
+    "wristRoll_Left": "left_wrist_roll_joint",
+    "shoulderPitch_Right": "right_shoulder_pitch_joint",
+    "shoulderRoll_Right": "right_shoulder_roll_joint",
+    "shoulderYaw_Right": "right_shoulder_yaw_joint",
+    "elbow_Right": "right_elbow_joint",
+    "wristYaw_Right": "right_wrist_yaw_joint",
+    "wristPitch_Right": "right_wrist_pitch_joint",
+    "wristRoll_Right": "right_wrist_roll_joint",
 }
 
 
@@ -282,15 +401,16 @@ class MotionCommand(CommandTermBase):
         self.device = self._env.device
 
         robot_body_names = self._env.simulator._body_list  # type: ignore[attr-defined]
-        robot_body_names_alias = [FAKE_BODY_NAME_ALIASES.get(bn, bn) for bn in robot_body_names]
+        robot_body_names_alias = [BODY_NAME_ALIASES.get(bn, bn) for bn in robot_body_names]
 
         robot_joint_names = self._env.simulator.dof_names  # type: ignore[attr-defined]
+        robot_joint_names_alias = [JOINT_NAME_ALIASES.get(jn, jn) for jn in robot_joint_names]
 
         # 1. load motion data
         self.motion: MotionLoader = MotionLoader(
             self.motion_cfg.motion_file,
             robot_body_names_alias,
-            robot_joint_names,
+            robot_joint_names_alias,
             device=self.device,
         )
 
@@ -305,9 +425,9 @@ class MotionCommand(CommandTermBase):
         self._maybe_add_default_pose_transition(prepend=False)
 
         # 2. get the indexes of the root link and the tracked links
-        self.ref_body_index = robot_body_names.index(self.motion_cfg.body_name_ref[0])  # int
+        self.ref_body_index = robot_body_names_alias.index(self.motion_cfg.body_name_ref[0])  # int
         self.tracked_body_indexes = self._get_index_of_a_in_b(
-            self.motion_cfg.body_names_to_track, robot_body_names, self.device
+            self.motion_cfg.body_names_to_track, robot_body_names_alias, self.device
         )
 
         # 3. get the name of the object, or indices of the object
