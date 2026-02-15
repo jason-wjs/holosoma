@@ -8,6 +8,25 @@ Core training framework for humanoid robot reinforcement learning with support f
 | **Algorithms** | PPO, FastSAC |
 | **Robots** | Unitree G1, Booster T1 |
 
+## Environment Setup
+
+### MJLAB (`hsmjlab`)
+
+Provision a dedicated MJLAB environment with pinned `mjlab==1.1.1`:
+
+```bash
+bash scripts/setup_mjlab.sh
+conda activate hsmjlab
+```
+
+Optional flags:
+
+```bash
+bash scripts/setup_mjlab.sh --help
+bash scripts/setup_mjlab.sh --env-name my_mjlab_env --python 3.11
+bash scripts/setup_mjlab.sh --force-recreate
+```
+
 ## Training
 
 All training/eval scripts support `--help` for discovering available flags, e.g. `python src/holosoma/holosoma/train_agent.py --help`.
