@@ -1,4 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
+<!-- 2026-02-15: IsaacSim parity with MJCF 29-DoF.
+     Wrist joints are revolute (not fixed), and foot_contact_point links are added for WBT/body-name compatibility. -->
 <robot name="adam_pro">
   <mujoco>
     <compiler meshdir="meshes" balanceinertia="true" discardvisual="false"/>
@@ -187,6 +189,26 @@
     <axis xyz="1 0 0"/>
     <limit lower="-0.3491" upper="0.3491" effort="12" velocity="20"/>
   </joint>
+  <link name="left_foot_contact_point">
+    <inertial>
+      <mass value="0.001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="invisible">
+        <color rgba="0 0 0 0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="left_foot_contact_point" type="fixed" dont_collapse="true">
+    <parent link="toeLeft"/>
+    <child link="left_foot_contact_point"/>
+    <origin xyz="0 0 -0.037" rpy="0 0 0"/>
+  </joint>
   <link name="hipPitchRight">
     <inertial>
       <origin xyz="-0.05661792 -0.05759336 -0.00078211" rpy="0 0 0"/>
@@ -342,6 +364,26 @@
     <child link="toeRight"/>
     <axis xyz="1 0 0"/>
     <limit lower="-0.3491" upper="0.3491" effort="12" velocity="20"/>
+  </joint>
+  <link name="right_foot_contact_point">
+    <inertial>
+      <mass value="0.001"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="invisible">
+        <color rgba="0 0 0 0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="right_foot_contact_point" type="fixed" dont_collapse="true">
+    <parent link="toeRight"/>
+    <child link="right_foot_contact_point"/>
+    <origin xyz="0 0 -0.037" rpy="0 0 0"/>
   </joint>
   <link name="waistRoll_link">
     <inertial>
@@ -544,10 +586,12 @@
       </geometry>
     </collision>
   </link>
-  <joint name="wristYaw_Left" type="fixed">
+  <joint name="wristYaw_Left" type="revolute">
     <origin xyz="-0.0250000000083053 0.028499999997574 -0.0728999999980683" rpy="0 0 0"/>
     <parent link="elbowLeft"/>
     <child link="wristYawLeft"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.67" upper="2.67" effort="1.7" velocity="4.92"/>
   </joint>
   <link name="wristPitchLeft">
     <inertial>
@@ -565,10 +609,12 @@
       </material>
     </visual>
   </link>
-  <joint name="wristPitch_Left" type="fixed">
+  <joint name="wristPitch_Left" type="revolute">
     <origin xyz="0 0 -0.201699999999994" rpy="0 0 0"/>
     <parent link="wristYawLeft"/>
     <child link="wristPitchLeft"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.96" upper="0.96" effort="2.1" velocity="4.92"/>
   </joint>
   <link name="wristRollLeft">
     <inertial>
@@ -592,10 +638,12 @@
       </geometry>
     </collision>
   </link>
-  <joint name="wristRoll_Left" type="fixed">
+  <joint name="wristRoll_Left" type="revolute">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <parent link="wristPitchLeft"/>
     <child link="wristRollLeft"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.96" upper="0.96" effort="2.1" velocity="4.92"/>
   </joint>
   <link name="L_thumb_proximal_base">
     <inertial>
@@ -1041,10 +1089,12 @@
       </geometry>
     </collision>
   </link>
-  <joint name="wristYaw_Right" type="fixed">
+  <joint name="wristYaw_Right" type="revolute">
     <origin xyz="-0.0249999999999065 -0.0285000000002922 -0.0728999999999894" rpy="0 0 0"/>
     <parent link="elbowRight"/>
     <child link="wristYawRight"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.67" upper="2.67" effort="1.7" velocity="4.92"/>
   </joint>
   <link name="wristPitchRight">
     <inertial>
@@ -1062,10 +1112,12 @@
       </material>
     </visual>
   </link>
-  <joint name="wristPitch_Right" type="fixed">
+  <joint name="wristPitch_Right" type="revolute">
     <origin xyz="0 0 -0.201699999999861" rpy="0 0 0"/>
     <parent link="wristYawRight"/>
     <child link="wristPitchRight"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.96" upper="0.96" effort="2.1" velocity="4.92"/>
   </joint>
   <link name="wristRollRight">
     <inertial>
@@ -1089,10 +1141,12 @@
       </geometry>
     </collision>
   </link>
-  <joint name="wristRoll_Right" type="fixed">
+  <joint name="wristRoll_Right" type="revolute">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <parent link="wristPitchRight"/>
     <child link="wristRollRight"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.96" upper="0.96" effort="2.1" velocity="4.92"/>
   </joint>
   <link name="R_thumb_proximal_base">
     <inertial>
