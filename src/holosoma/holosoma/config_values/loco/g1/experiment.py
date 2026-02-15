@@ -55,4 +55,13 @@ g1_29dof_fast_sac = ExperimentConfig(
     ),
 )
 
-__all__ = ["g1_29dof", "g1_29dof_fast_sac"]
+g1_29dof_mjlab_flat = replace(
+    g1_29dof,
+    training=replace(g1_29dof.training, name="g1_29dof_mjlab_flat"),
+    simulator=simulator.mjlab,
+    terrain=terrain.terrain_locomotion_plane,
+    action=action.g1_29dof_joint_target_mjlab,
+    randomization=randomization.g1_29dof_randomization_mjlab,
+)
+
+__all__ = ["g1_29dof", "g1_29dof_fast_sac", "g1_29dof_mjlab_flat"]

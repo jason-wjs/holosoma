@@ -1,5 +1,7 @@
 """Locomotion randomization presets for the G1 robot."""
 
+from copy import deepcopy
+
 from holosoma.config_types.randomization import RandomizationManagerCfg, RandomizationTermCfg
 
 g1_29dof_randomization = RandomizationManagerCfg(
@@ -103,4 +105,9 @@ g1_29dof_randomization = RandomizationManagerCfg(
     },
 )
 
-__all__ = ["g1_29dof_randomization"]
+g1_29dof_randomization_mjlab = deepcopy(g1_29dof_randomization)
+g1_29dof_randomization_mjlab.setup_terms.pop("mass_randomizer", None)
+g1_29dof_randomization_mjlab.setup_terms.pop("randomize_friction_startup", None)
+g1_29dof_randomization_mjlab.setup_terms.pop("randomize_base_com_startup", None)
+
+__all__ = ["g1_29dof_randomization", "g1_29dof_randomization_mjlab"]
