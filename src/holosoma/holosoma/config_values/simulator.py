@@ -105,10 +105,35 @@ mjwarp = SimulatorConfig(
     ),
 )
 
+mjlab = SimulatorConfig(
+    _target_="holosoma.simulator.mjlab.mjlab_simulator.MJLab",
+    _recursive_=False,
+    config=SimulatorInitConfig(
+        name="mjlab",
+        scene=SceneConfig(
+            replicate_physics=True,
+        ),
+        sim=SimEngineConfig(
+            fps=200,
+            control_decimation=4,
+            substeps=1,
+            physx=PhysxConfig(
+                solver_type=1,
+                num_position_iterations=4,
+                num_velocity_iterations=0,
+                bounce_threshold_velocity=0.5,
+            ),
+            render_mode="fake",
+            render_interval=1,
+        ),
+    ),
+)
+
 
 DEFAULTS = {
     "isaacgym": isaacgym,
     "isaacsim": isaacsim,
     "mujoco": mujoco,
     "mjwarp": mjwarp,
+    "mjlab": mjlab,
 }
