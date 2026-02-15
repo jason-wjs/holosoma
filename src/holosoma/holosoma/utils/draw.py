@@ -54,6 +54,14 @@ elif simulator_type == SimulatorType.ISAACSIM:
         draw_points,
         draw_sphere,
     )
+elif simulator_type == SimulatorType.MJLAB:
+    # MJLAB debug drawing adapters are not implemented yet.
+    clear_lines = _make_noop
+    draw_sphere = _make_noop
+    draw_line = _make_noop
+    draw_points = _make_noop
+    draw_height_points = _make_noop
+    draw_foot_height_points = _make_noop
 else:
     raise ValueError(f"Unsupported simulator type: {simulator_type}")
 

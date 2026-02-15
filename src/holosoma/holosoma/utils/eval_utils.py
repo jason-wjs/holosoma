@@ -293,6 +293,8 @@ def init_sim_imports(tyro_config: ExperimentConfig):
     simulator_type = get_simulator_type()
     if simulator_type == SimulatorType.ISAACSIM:
         return setup_isaaclab_launcher(tyro_config)
+    if simulator_type == SimulatorType.MJLAB:
+        return None
 
     # For other simulators, no app is needed
     return None

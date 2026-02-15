@@ -61,5 +61,6 @@ where = ["."]
 [tool.pytest.ini_options]
 markers = [
     "isaacsim: marks tests as requiring Isaac Sim (deselect with '-m \"not isaacsim\"')",
+    "mjlab: marks tests as requiring MJLAB (deselect with '-m \"not mjlab\"')",
     "multi_gpu: marks tests as requiring multiple GPUs (deselect with '-m \"not multi_gpu\"')",
 ]

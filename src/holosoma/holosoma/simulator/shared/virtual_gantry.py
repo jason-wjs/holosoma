@@ -134,6 +134,10 @@ class VirtualGantry:
         elif simtype is SimulatorType.MUJOCO:
             self._apply_force_impl = self._apply_force_mujoco
             self._clear_forces_impl = self._clear_forces_mujoco
+        elif simtype is SimulatorType.MJLAB:
+            logger.warning("Virtual Gantry is currently no-op for MJLAB.")
+            self._apply_force_impl = self._apply_force_mjlab
+            self._clear_forces_impl = None
         else:
             raise ValueError(f"Unsupported simulator type: {simtype}")
 
@@ -357,6 +361,10 @@ class VirtualGantry:
             self.sim.applied_forces[env_id, self.body_link_id, :] = 0.0
         # ClassicBackend (numpy array): Do nothing
         # MuJoCo automatically zeros xfrc_applied each step, so no explicit clearing needed
+
+    def _apply_force_mjlab(self, link_id: int, force: npt.NDArray[np.float64]) -> None:
+        """Best-effort force application for MJLAB, currently no-op."""
+        del link_id, force
 
     def _apply_force_isaacgym(self, link_id: int, force: npt.NDArray[np.float64]) -> None:
         """Apply force to rigid body in IsaacGym simulator.

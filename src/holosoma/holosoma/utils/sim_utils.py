@@ -46,6 +46,13 @@ def setup_simulator_imports(config: ExperimentConfig | RunSimConfig) -> None:
         import mujoco  # noqa: PLC0415
 
         assert mujoco is not None
+    elif simulator_type == SimulatorType.MJLAB:
+        try:
+            import mjlab  # noqa: PLC0415
+
+            assert mjlab is not None
+        except ImportError:
+            logger.warning("MJLAB simulator selected but mjlab is not installed in this environment.")
     elif simulator_type == SimulatorType.ISAACGYM:
         import isaacgym  # noqa: PLC0415
 
