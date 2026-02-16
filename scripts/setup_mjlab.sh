@@ -11,7 +11,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 ROOT_DIR=$(dirname "$SCRIPT_DIR")
 
-ENV_NAME="hsmjlab"
+ENV_NAME="${CONDA_ENV_NAME:-hsmjlab}"
 PYTHON_VERSION="3.11"
 FORCE_RECREATE=0
 
