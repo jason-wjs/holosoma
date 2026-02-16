@@ -32,7 +32,10 @@ def test_mjlab_g1_flat_smoke() -> None:
     simulator = MJLab(tyro_config=full_cfg, terrain_manager=_DummyTerrainManager(), device="cpu")
     simulator.setup()
     simulator.setup_terrain()
-    simulator.load_assets()
+    try:
+        simulator.load_assets()
+    except ImportError as exc:
+        pytest.skip(f"MJLAB runtime unavailable in this environment: {exc}")
 
     base_init_state = torch.tensor(
         exp_cfg.robot.init_state.pos
@@ -56,4 +59,3 @@ def test_mjlab_g1_flat_smoke() -> None:
     assert simulator.contact_forces.shape[0] == training_cfg.num_envs
     assert torch.isfinite(simulator.robot_root_states).all()
     assert torch.isfinite(simulator.dof_pos).all()
-
