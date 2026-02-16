@@ -76,6 +76,7 @@ check_env_health() {
 
   source "${CONDA_ROOT}/bin/activate" "${ENV_NAME}"
   python - <<'PY'
+import importlib.metadata as metadata
 import importlib.util
 import sys
 
@@ -86,7 +87,7 @@ if missing:
     sys.exit(1)
 
 import mjlab
-print("mjlab version:", mjlab.__version__)
+print("mjlab version:", metadata.version("mjlab"))
 PY
 }
 
@@ -152,9 +153,10 @@ pip install "mjlab==1.1.1" \
 pip install -e "${ROOT_DIR}/src/holosoma" --no-deps
 
 python - <<'PY'
+import importlib.metadata as metadata
 import mjlab
 import holosoma
-print("mjlab version:", mjlab.__version__)
+print("mjlab version:", metadata.version("mjlab"))
 print("holosoma import: OK")
 PY
 
