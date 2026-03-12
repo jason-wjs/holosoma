@@ -12,8 +12,8 @@ cd "${REPO_ROOT}/src/holosoma_retargeting/holosoma_retargeting"
 #   ROBOT=g1 DATA_FORMAT=optitrack DATA_DIR=demo_data/optitrack_npz SAVE_DIR=demo_results_parallel/g1/robot_only/optitrack
 ROBOT="${ROBOT:-adam_pro}"
 DATA_FORMAT="${DATA_FORMAT:-optitrack}"
-DATA_DIR="${DATA_DIR:-demo_data/optitrack_npz}"
-SAVE_DIR="${SAVE_DIR:-demo_results_parallel/${ROBOT}/robot_only/optitrack}"
+DATA_DIR="${DATA_DIR:-demo_data/custom_optitrack_npz}"
+SAVE_DIR="${SAVE_DIR:-demo_results_parallel/${ROBOT}/robot_only/optitrack_from_fbx_test}"
 
 python examples/parallel_robot_retarget.py \
   --robot "${ROBOT}" \
@@ -21,8 +21,9 @@ python examples/parallel_robot_retarget.py \
   --task-type robot_only \
   --data-format "${DATA_FORMAT}" \
   --data-dir "${DATA_DIR}" \
-  --augmentation false \
   --save-dir "${SAVE_DIR}" \
+  --retargeter.smooth-weight 0.2 \
+  --fps 30 \
   "$@"
 
 

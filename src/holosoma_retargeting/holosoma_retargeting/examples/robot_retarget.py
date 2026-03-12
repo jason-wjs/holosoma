@@ -21,7 +21,11 @@ src_root = Path(__file__).resolve().parents[2]
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from holosoma_retargeting.config_types.data_type import DEMO_JOINTS_REGISTRY, MotionDataConfig  # noqa: E402
+from holosoma_retargeting.config_types.data_type import (  # noqa: E402
+    DEMO_JOINTS_REGISTRY,
+    MotionDataConfig,
+    get_optitrack_demo_joints,
+)
 from holosoma_retargeting.config_types.retargeter import RetargeterConfig  # noqa: E402
 from holosoma_retargeting.config_types.retargeting import RetargetingConfig  # noqa: E402
 from holosoma_retargeting.config_types.robot import RobotConfig  # noqa: E402
@@ -43,6 +47,7 @@ from holosoma_retargeting.src.utils import (  # noqa: E402
     preprocess_motion_data,
     transform_from_human_to_world,
     transform_y_up_to_z_up,
+    load_bvh_data,
 )
 
 # Configure logging
@@ -277,6 +282,25 @@ def load_motion_data(
             human_joints = human_data["global_joint_positions"]
             human_height = human_data["height"]
             smpl_scale = constants.ROBOT_HEIGHT / human_height
+        elif data_format == "optitrack":
+            downsample = 4
+            npz_file = data_path / f"{task_name}.npz"
+            if not npz_file.exists():
+                raise FileNotFoundError(f"OptiTrack data file not found: {npz_file}")
+            human_data = np.load(str(npz_file))
+            human_joints = human_data["global_joint_positions"][::downsample]
+            human_height = human_data["height"]
+            smpl_scale = constants.ROBOT_HEIGHT / human_height
+        elif data_format == "bvh":
+            bvh_file = data_path / f"{task_name}.bvh"
+            if not bvh_file.exists():
+                raise FileNotFoundError(f"BVH data file not found: {bvh_file}")
+
+            human_joints, _ = load_bvh_data(str(bvh_file))
+            human_joints = human_joints[::4]
+
+            default_human_height = 1.70
+            smpl_scale = constants.ROBOT_HEIGHT / default_human_height
         else:
             # For other custom data format, if it uses consistent .npz file like SMPLX,
             # you can use the same logic as SMPLX.
@@ -509,9 +533,12 @@ def build_retargeter_kwargs_from_config(
         "penetration_tolerance": retargeter_config.penetration_tolerance,
         "foot_sticking_tolerance": retargeter_config.foot_sticking_tolerance,
         "step_size": retargeter_config.step_size,
+        "smooth_weight": retargeter_config.smooth_weight,
         "visualize": retargeter_config.visualize,
         "debug": retargeter_config.debug,
         "w_nominal_tracking_init": retargeter_config.w_nominal_tracking_init,
+        "n_first_iter": retargeter_config.n_first_iter,
+        "n_subsequent_iter": retargeter_config.n_subsequent_iter,
     }
     if task_type == "climbing":
         kwargs["nominal_tracking_tau"] = retargeter_config.nominal_tracking_tau
@@ -680,6 +707,10 @@ def main(cfg: RetargetingConfig) -> None:
         task_type, data_format, data_path, task_name, constants, cfg.motion_data_config
     )
 
+    # OptiTrack 自适应：按实际关节数选用 27（PKL）或 21（BVH）骨架
+    if data_format == "optitrack":
+        constants.DEMO_JOINTS = get_optitrack_demo_joints(human_joints.shape[1])
+
     # Get toe names from motion data config (depends only on data_format)
     toe_names = cfg.motion_data_config.toe_names
 
@@ -701,8 +732,8 @@ def main(cfg: RetargetingConfig) -> None:
 
     # Preprocess motion data
     if task_type == "robot_only":
-        ground_height_percentile = 5.0 if data_format == "optitrack" else 0.0
-        mat_height = 0.0 if data_format == "optitrack" else 0.1
+        ground_height_percentile = 5.0 if data_format in ("optitrack", "bvh") else 0.0
+        mat_height = 0.0 if data_format in ("optitrack", "bvh") else 0.1
         human_joints = preprocess_motion_data(
             human_joints,
             retargeter,
@@ -760,6 +791,7 @@ def main(cfg: RetargetingConfig) -> None:
         q_nominal_list=q_nominal,
         original=not cfg.augmentation,
         dest_res_path=dest_res_path,
+        fps=cfg.fps,
     )
     logger.info("Retargeting complete. Results saved to: %s", dest_res_path)
 

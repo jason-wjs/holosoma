@@ -35,6 +35,9 @@ class RetargeterConfig:
     step_size: float = 0.2
     """Trust region for each SQP iteration."""
 
+    smooth_weight: float = 0.2
+    """Weight for smoothness cost (dq vs previous frame)."""
+
     visualize: bool = False
     """Whether to visualize the retargeting process."""
 
@@ -46,3 +49,9 @@ class RetargeterConfig:
 
     nominal_tracking_tau: float = 1e6
     """Time constant for the nominal tracking cost."""
+
+    n_first_iter: int = 50
+    """Number of SQP iterations for the first frame."""
+
+    n_subsequent_iter: int = 5
+    """Number of SQP iterations for subsequent frames."""

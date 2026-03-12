@@ -142,7 +142,33 @@ MOCAP_DEMO_JOINTS = [
     "RightFootMod",
 ]
 
-OPTITRACK_DEMO_JOINTS = [
+# BVH 骨架顺序（与 extract_global_positions / lafan1 read_bvh 一致，21 关节）
+OPTITRACK_DEMO_JOINTS_21 = [
+    "Hips",
+    "Spine",
+    "Spine1",
+    "Neck",
+    "Head",
+    "LeftShoulder",
+    "LeftArm",
+    "LeftForeArm",
+    "LeftHand",
+    "RightShoulder",
+    "RightArm",
+    "RightForeArm",
+    "RightHand",
+    "LeftUpLeg",
+    "LeftLeg",
+    "LeftFoot",
+    "LeftToeBase",
+    "RightUpLeg",
+    "RightLeg",
+    "RightFoot",
+    "RightToeBase",
+]
+
+# PKL 等 27 关节骨架（原 OptiTrack 格式）
+OPTITRACK_DEMO_JOINTS_27 = [
     "Hips",
     "Spine",
     "Spine1",
@@ -170,6 +196,21 @@ OPTITRACK_DEMO_JOINTS = [
     "RightToeBase",
     "RToeEnd",
 ]
+
+# 默认用 BVH 21 关节（DEMO_JOINTS_REGISTRY 与校验用）
+OPTITRACK_DEMO_JOINTS = OPTITRACK_DEMO_JOINTS_21
+
+
+def get_optitrack_demo_joints(num_joints: int) -> list[str]:
+    """按实际关节数返回 optitrack 的 demo_joints：27 用 PKL 骨架，否则用 BVH 21 关节。"""
+    if num_joints == 26:
+        return OPTITRACK_DEMO_JOINTS_27.copy()
+    if num_joints == 21:
+        return OPTITRACK_DEMO_JOINTS_21.copy()
+    raise ValueError(
+        f"optitrack 仅支持 21（BVH）或 27（PKL）关节，当前为 {num_joints}。"
+        "请检查 NPZ 的 global_joint_positions 维度是否与数据源一致。"
+    )
 
 SMPLX_DEMO_JOINTS = [
     "Pelvis",
@@ -402,6 +443,40 @@ JOINTS_MAPPINGS = {
         "LeftHand": "wristRollLeft",
         "RightHand": "wristRollRight",
     },
+    ("bvh", "g1"): {
+        "Spine1": "pelvis_contour_link",
+        "LeftUpLeg": "left_hip_pitch_link",
+        "RightUpLeg": "right_hip_pitch_link",
+        "LeftLeg": "left_knee_link",
+        "RightLeg": "right_knee_link",
+        "LeftArm": "left_shoulder_roll_link",
+        "RightArm": "right_shoulder_roll_link",
+        "LeftForeArm": "left_elbow_link",
+        "RightForeArm": "right_elbow_link",
+        "LeftFoot": "left_ankle_intermediate_1_link",
+        "RightFoot": "right_ankle_intermediate_1_link",
+        "LeftToeBase": "left_ankle_roll_sphere_5_link",
+        "RightToeBase": "right_ankle_roll_sphere_5_link",
+        "LeftHand": "left_rubber_hand_link",
+        "RightHand": "right_rubber_hand_link",
+    },
+    ("bvh", "adam_pro"): {
+        "Spine1": "pelvis",
+        "LeftUpLeg": "hipPitchLeft",
+        "RightUpLeg": "hipPitchRight",
+        "LeftLeg": "shinLeft",
+        "RightLeg": "shinRight",
+        "LeftArm": "shoulderRollLeft",
+        "RightArm": "shoulderRollRight",
+        "LeftForeArm": "elbowLeft",
+        "RightForeArm": "elbowRight",
+        "LeftFoot": "anklePitchLeft",
+        "RightFoot": "anklePitchRight",
+        "LeftToeBase": "left_foot_sphere_5_link",
+        "RightToeBase": "right_foot_sphere_5_link",
+        "LeftHand": "wristRollLeft",
+        "RightHand": "wristRollRight",
+    },
 }
 
 # Data format specific constants
@@ -411,6 +486,7 @@ TOE_NAMES_BY_FORMAT = {
     "mocap": ["LeftToeBase", "RightToeBase"],
     "smplx": ["L_Foot", "R_Foot"],
     "optitrack": ["LeftToeBase", "RightToeBase"],
+    "bvh": ["LeftToeBase", "RightToeBase"],
 }
 
 
@@ -430,6 +506,9 @@ DATA_FORMAT_CONSTANTS: dict[str, FormatConstants] = {
     "optitrack": {
         "default_human_height": 1.7,
     },
+    "bvh": {
+        "default_human_height": 1.7,
+    },
 }
 
 # Unified registry: Maps format name to demo joints
@@ -441,6 +520,7 @@ DEMO_JOINTS_REGISTRY: dict[str, list[str]] = {
     "mocap": MOCAP_DEMO_JOINTS,
     "smplx": SMPLX_DEMO_JOINTS,
     "optitrack": OPTITRACK_DEMO_JOINTS,
+    "bvh": OPTITRACK_DEMO_JOINTS_21,
 }
 
 # Type alias for data formats - use str to allow dynamic data formats via DEMO_JOINTS_REGISTRY

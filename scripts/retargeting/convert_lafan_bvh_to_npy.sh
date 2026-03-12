@@ -14,4 +14,5 @@ cd "${REPO_ROOT}/src/holosoma_retargeting/holosoma_retargeting"
 python data_utils/extract_global_positions.py \
   --input-dir "demo_data/lafan_raw" \
   --output-dir "demo_data/lafan1" \
+  --input-unit m \
   "$@"

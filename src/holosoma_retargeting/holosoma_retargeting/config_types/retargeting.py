@@ -44,6 +44,9 @@ class RetargetingConfig:
     augmentation: bool = False
     """Whether to use augmentation."""
 
+    fps: int = 30
+    """Frames per second for motion data (saved in output and used for visualization)."""
+
     # --- Nested configs ---
     robot_config: RobotConfig = field(default_factory=lambda: RobotConfig(robot_type="g1"))
     """Robot configuration (nested - can override robot_urdf_file, robot_dof, etc.

@@ -7,8 +7,8 @@ from dataclasses import dataclass, field
 from holosoma_retargeting.config_types.data_type import MotionDataConfig
 from holosoma_retargeting.config_types.robot import RobotConfig
 
-_ROBOT_JOINT_NAMES_DEFAULT = {
-    "g1": [
+def _g1_t1_joint_names() -> list[str]:
+    return [
         "left_hip_pitch_joint",
         "left_hip_roll_joint",
         "left_hip_yaw_joint",
@@ -38,7 +38,12 @@ _ROBOT_JOINT_NAMES_DEFAULT = {
         "right_wrist_roll_joint",
         "right_wrist_pitch_joint",
         "right_wrist_yaw_joint",
-    ],
+    ]
+
+
+_ROBOT_JOINT_NAMES_DEFAULT: dict[str, list[str]] = {
+    "g1": _g1_t1_joint_names(),
+    "t1": _g1_t1_joint_names(),
     "adam_pro": [
         "hipPitch_Left",
         "hipRoll_Left",
@@ -114,8 +119,23 @@ class DataConversionConfig:
     use_omniretarget_data: bool = False
     """Use OmniRetarget data format."""
 
-    no_viewer: bool = False
-    """Disable MuJoCo viewer (for headless environments)."""
+    output_format: str = "default"
+    """Output format: 'default' | 'bm' (BeyondMimic/mjlab 训练用) | 'pbhc' (base+joint only) | 'spider' (qpos, qvel, ctrl, contact, contact_pos)."""
+
+    headless: bool = False
+    """Run without opening the MuJoCo viewer."""
+
+    robot_xml_path: str | None = None
+    """Override path to robot MuJoCo XML (default from robot + object_name)."""
+
+    output_joint_format: str = "qpos"
+    """Joint output: 'qpos' (full qpos slice) | 'dof' (actuated joints only)."""
+
+    include_world_body: bool = True
+    """Include world body (body id 0) in body_pos_w / body_quat_w etc."""
+
+    include_names: bool = True
+    """Include joint_names / body_names in output NPZ (set False for bm)."""
 
     # --- Nested configs ---
     robot_config: RobotConfig = field(default_factory=lambda: RobotConfig(robot_type="g1"))

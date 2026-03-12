@@ -521,6 +521,28 @@ def find_standing_pose(q: np.ndarray):
     # q_standing[7 : 7 + 29] = Q_A_STANDING
     q_standing[19:22] = 0.0
     return q_standing
+def load_bvh_data(file_path):
+    """
+    Load BVH data and extract global positions.
+
+    Args:
+        file_path (str): Path to the .bvh file.
+
+    Returns:
+        tuple: (human_joints, joint_names)
+    """
+    from holosoma_retargeting.data_utils.lafan1 import extract, utils
+
+    # Read BVH file
+    anim = extract.read_bvh(file_path)
+
+    # Compute global positions using Forward Kinematics
+    # global_quats shape: (T, J, 4), global_positions shape: (T, J, 3)
+    _, global_positions = utils.quat_fk(anim.quats, anim.pos, anim.parents)
+
+    # BVH units are often in cm or different scales, but here they seem to be in meters
+    # based on the offsets (e.g., 0.096, 0.213).
+    return global_positions, anim.bones
 
 
 def load_smpl_motion(model_path, motion_file):

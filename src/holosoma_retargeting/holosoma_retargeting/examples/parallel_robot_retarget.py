@@ -23,7 +23,7 @@ src_root = Path(__file__).resolve().parents[2]
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from holosoma_retargeting.config_types.data_type import MotionDataConfig  # noqa: E402
+from holosoma_retargeting.config_types.data_type import MotionDataConfig, get_optitrack_demo_joints  # noqa: E402
 from holosoma_retargeting.config_types.retargeting import ParallelRetargetingConfig  # noqa: E402
 from holosoma_retargeting.config_types.robot import RobotConfig  # noqa: E402
 
@@ -87,6 +87,10 @@ def find_files(data_dir: Path, data_format: str, object_name: str | None = None)
     if data_format == "smplx":
         # SMPL-X: .npz files in root directory
         files = [str(p) for p in data_dir.glob("*.npz")]
+        return sorted(files)
+    if data_format == "bvh":
+        # BVH: .bvh files in root directory
+        files = [str(p) for p in data_dir.glob("*.bvh")]
         return sorted(files)
     # For other data format, default to be consistent with SMPL-X
     files = [str(p) for p in data_dir.glob("*.npz")]
@@ -183,6 +187,10 @@ def process_single_task(args):
         task_type, data_format, Path(file_path).parent, task_name, constants, motion_data_config
     )
 
+    # OptiTrack 自适应：按实际关节数选用 27（PKL）或 21（BVH）骨架
+    if data_format == "optitrack":
+        constants.DEMO_JOINTS = get_optitrack_demo_joints(human_joints.shape[1])
+
     # Preserve original data (preprocess_motion_data modifies them in place)
     human_joints_original = human_joints.copy()
     object_poses_original = object_poses.copy()
@@ -231,8 +239,8 @@ def process_single_task(args):
 
         # Preprocess motion data
         if task_type == "robot_only":
-            ground_height_percentile = 5.0 if data_format == "optitrack" else 0.0
-            mat_height = 0.0 if data_format == "optitrack" else 0.1
+            ground_height_percentile = 5.0 if data_format in ("optitrack", "bvh") else 0.0
+            mat_height = 0.0 if data_format in ("optitrack", "bvh") else 0.1
             human_joints = preprocess_motion_data(
                 human_joints,
                 retargeter,
@@ -307,6 +315,7 @@ def process_single_task(args):
             q_nominal_list=q_nominal,
             original=(k == 0),
             dest_res_path=file_name,
+            fps=cfg.fps,
         )
 
 

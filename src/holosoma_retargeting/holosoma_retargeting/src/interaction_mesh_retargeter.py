@@ -50,6 +50,7 @@ class InteractionMeshRetargeter:
         activate_obj_non_penetration: bool = True,
         activate_joint_limits: bool = True,
         step_size: float = 0.2,
+        smooth_weight: float = 0.2,
         collision_detection_threshold: float = 0.1,
         penetration_tolerance: float = 1e-3,
         foot_sticking_tolerance: float = 1e-3,
@@ -57,6 +58,8 @@ class InteractionMeshRetargeter:
         debug: bool = False,
         w_nominal_tracking_init: float = 5.0,
         nominal_tracking_tau: float = 10.0,
+        n_first_iter: int = 50,
+        n_subsequent_iter: int = 5,
     ):
         """This kinematic retargeter solves the diffIK problem with hard constraints in SQP style.
         During each SQP iteration, the problem is solved with the following constraints and costs:
@@ -99,7 +102,7 @@ class InteractionMeshRetargeter:
 
         # Setup weights and parameters
         self.laplacian_weights = 10
-        self.smooth_weight = 0.2
+        self.smooth_weight = smooth_weight
         # Tolerance for foot sticking constraints in x, y.
         self.foot_sticking_tolerance = foot_sticking_tolerance
 
@@ -163,6 +166,8 @@ class InteractionMeshRetargeter:
 
         self.w_nominal_tracking_init = w_nominal_tracking_init
         self.nominal_tracking_tau = nominal_tracking_tau
+        self.n_first_iter = n_first_iter
+        self.n_subsequent_iter = n_subsequent_iter
         self.track_nominal_indices = task_constants.NOMINAL_TRACKING_INDICES
 
     def _setup_visualization(self):
@@ -301,6 +306,7 @@ class InteractionMeshRetargeter:
         q_nominal_list=None,
         original=True,
         dest_res_path=None,
+        fps: int = 30,
     ):
         """
         The main function to retarget an entire motion sequence frame by frame.
@@ -314,6 +320,7 @@ class InteractionMeshRetargeter:
             foot_sticking_sequences (list): List of foot sticking sequences for each frame.
             q_a_init (np.ndarray, optional): Initial robot configuration.
             q_a_nominal (np.ndarray, optional): Nominal robot configuration.
+            fps (int): Frames per second for saved motion and visualization (default 30).
 
         Returns:
             tuple: (retargeted_motions, obj_pts_demo_list, obj_pts_list, tetrahedra)
@@ -397,7 +404,7 @@ class InteractionMeshRetargeter:
                     w_nominal_tracking=w_nominal_tracking,
                     q_a_nominal=(q_nominal_list[i, self.q_a_indices] if q_nominal_list is not None else None),
                     init_t=i == 0,
-                    n_iter=50 if i == 0 else 10,
+                    n_iter=self.n_first_iter if i == 0 else self.n_subsequent_iter,
                 )
                 if self.debug:
                     robot_link_positions = self._get_robot_link_positions(
@@ -436,7 +443,7 @@ class InteractionMeshRetargeter:
             dest_res_path,
             qpos=np.array(retargeted_motions)[1:],
             human_joints=human_joint_motions,
-            fps=30,
+            fps=fps,
             cost=cost,
         )
         print("Saving results to path:", dest_res_path)
@@ -453,7 +460,7 @@ class InteractionMeshRetargeter:
                 viser_object=self.viser_object,
                 object_base_frame=getattr(self, "object_base", None) if self.viser_object else None,
                 contains_object_in_qpos=bool(self.viser_object) and bool(self.has_dynamic_object),
-                initial_fps=30,
+                initial_fps=fps,
                 initial_interp_mult=2,
                 loop=False,
             )

@@ -5,13 +5,14 @@ Simple script to extract global positions from LAFAN dataset BVH files.
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import tyro
 from lafan1 import extract, utils  # type: ignore[import-not-found]
 
 
-def extract_global_positions(bvh_file_path):
+def extract_global_positions(bvh_file_path: str, input_unit: Literal["cm", "m"] = "cm"):
     """
     Extract global positions from a BVH file.
 
@@ -30,13 +31,18 @@ def extract_global_positions(bvh_file_path):
     anim = extract.read_bvh(bvh_file_path)
 
     # Compute global positions using Forward Kinematics
-    global_quats, global_positions = utils.quat_fk(anim.quats, anim.pos, anim.parents)
+    _, global_positions = utils.quat_fk(anim.quats, anim.pos, anim.parents)
+    unit_scale_map: dict[str, float] = {"cm": 0.01, "m": 1.0}
+    if input_unit not in unit_scale_map:
+        raise ValueError(f"Unsupported input_unit '{input_unit}', expected one of {tuple(unit_scale_map)}")
+
+    global_positions_m = global_positions * unit_scale_map[input_unit]
     return {
-        "positions": global_positions / 100,
+        "positions": global_positions_m,
         "joint_names": anim.bones,
         "parents": anim.parents,
-        "num_frames": global_positions.shape[0],
-        "num_joints": global_positions.shape[1],
+        "num_frames": global_positions_m.shape[0],
+        "num_joints": global_positions_m.shape[1],
     }
 
 
@@ -58,6 +64,7 @@ class Config:
 
     input_dir: str = "./lafan1/lafan"
     output_dir: str = "../demo_data/lafan"
+    input_unit: Literal["cm", "m"] = "cm"
 
 
 def main(cfg: Config):
@@ -85,7 +92,7 @@ def main(cfg: Config):
         bvh_path = input_dir / bvh_file
 
         # Extract global positions
-        result = extract_global_positions(str(bvh_path))
+        result = extract_global_positions(str(bvh_path), input_unit=cfg.input_unit)
 
         print(f"  Frames: {result['num_frames']}")
         print(f"  Joints: {result['num_joints']}")

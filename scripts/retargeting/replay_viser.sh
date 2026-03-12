@@ -8,8 +8,8 @@ source "${REPO_ROOT}/scripts/source_retargeting_setup.sh"
 cd "${REPO_ROOT}/src/holosoma_retargeting/holosoma_retargeting"
 
 python viser_player.py \
-  --qpos-npz "/home/humanoid/Projects/Junsong_WU/adam_reference/holosoma/src/holosoma_retargeting/holosoma_retargeting/demo_results/adam_pro/robot_only/omomo/sub3_largebox_003.npz" \
-  --robot-urdf models/adam_pro/adam_pro_29dof.urdf \
+  --qpos-npz "demo_results/g1/robot_only/bvh_from_1031/BOXING1_Skeleton 004_z_up_x_forward_gym.npz" \
+  --robot-urdf models/g1/g1_29dof.urdf \
   --fps 30 \
   --no-assume-object-in-qpos \
   --no-loop \

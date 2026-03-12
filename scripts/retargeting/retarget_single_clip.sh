@@ -2,11 +2,11 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-REPO_ROOT=$(cd -- "${SCRIPT_DIR}/../.." &>/dev/null && pwd)
-
+REPO_ROOT=$(cd -- "${SCRIPT_DIR}/../.." &>/dev/null && pwd)  
 source "${REPO_ROOT}/scripts/source_retargeting_setup.sh"
 cd "${REPO_ROOT}/src/holosoma_retargeting/holosoma_retargeting"
 
+ROBOT="${ROBOT:-adam_pro}"
 ## omomo_robot_only
 # python examples/robot_retarget.py \
 #   --robot adam_pro \
@@ -32,18 +32,18 @@ cd "${REPO_ROOT}/src/holosoma_retargeting/holosoma_retargeting"
 #   "$@"
 
 ## lafan1
-python examples/robot_retarget.py \
-  --robot adam_pro \
-  --task-type robot_only \
-  --task-name dance1_subject1 \
-  --data-path demo_data/lafan1_npy \
-  --data-format lafan \
-  --save-dir "demo_results/adam_pro/robot_only/lafan1" \
-  --task-config.ground-range -15 15 \
-  --retargeter.foot-sticking-tolerance 0.02 \
-  --retargeter.debug \
-  --retargeter.visualize \
-  "$@"
+# python examples/robot_retarget.py \
+#   --robot adam_pro \
+#   --task-type robot_only \
+#   --task-name dance1_subject1 \
+#   --data-path demo_data/lafan1_npy \
+#   --data-format lafan \
+#   --save-dir "demo_results/adam_pro/robot_only/lafan1" \
+#   --task-config.ground-range -15 15 \
+#   --retargeter.foot-sticking-tolerance 0.02 \
+#   --retargeter.debug \
+#   --retargeter.visualize \
+#   "$@"
 
 ## amass
 # python examples/robot_retarget.py \
@@ -61,12 +61,24 @@ python examples/robot_retarget.py \
 # python examples/robot_retarget.py \
 #   --robot adam_pro \
 #   --task-type robot_only \
-#   --task-name turn \
-#   --data-path demo_data/custom_optitrack_npz \
+#   --task-name "BOXING4_Skeleton 004_z_up_x_forward_gym" \
+#   --data-path demo_data/optitrack_from_bvh_npz \
 #   --data-format optitrack \
 #   --save-dir "demo_results/adam_pro/robot_only/optitrack" \
 #   --retargeter.debug \
 #   --retargeter.visualize \
 #   "$@"
+python examples/robot_retarget.py \
+  --robot "${ROBOT}" \
+  --task-type robot_only \
+  --task-name "BOXING1_Skeleton 004_z_up_x_forward_gym" \
+  --data-path demo_data/full_bvh_data/converted_1031 \
+  --data-format bvh \
+  --save-dir "demo_results/${ROBOT}/robot_only/bvh_from_1031" \
+  --retargeter.smooth-weight 0.2 \
+  --fps 30 \
+  --retargeter.no-visualize \
+  --retargeter.no-debug \
+  "$@"
 
 

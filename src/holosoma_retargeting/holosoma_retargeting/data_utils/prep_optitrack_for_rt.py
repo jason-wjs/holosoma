@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import tyro
 
-from holosoma_retargeting.config_types.data_type import OPTITRACK_DEMO_JOINTS
+from holosoma_retargeting.config_types.data_type import OPTITRACK_DEMO_JOINTS_27
 
 
 def _extract_joint_position(joint_entry: object, joint_name: str) -> np.ndarray:
@@ -33,14 +33,14 @@ def convert_optitrack_pkl_to_npz(input_pkl: Path, output_dir: Path, height: floa
         raise ValueError(f"OptiTrack file '{input_pkl}' must contain a non-empty list of frames")
 
     num_frames = len(frames)
-    num_joints = len(OPTITRACK_DEMO_JOINTS)
+    num_joints = len(OPTITRACK_DEMO_JOINTS_27)
     positions = np.zeros((num_frames, num_joints, 3), dtype=np.float64)
 
     for frame_idx, frame in enumerate(frames):
         if not isinstance(frame, dict):
             raise ValueError(f"Frame {frame_idx} in '{input_pkl}' is not a dict")
 
-        for joint_idx, joint_name in enumerate(OPTITRACK_DEMO_JOINTS):
+        for joint_idx, joint_name in enumerate(OPTITRACK_DEMO_JOINTS_27):
             if joint_name not in frame:
                 raise KeyError(f"Missing joint '{joint_name}' in frame {frame_idx} of '{input_pkl}'")
             positions[frame_idx, joint_idx] = _extract_joint_position(frame[joint_name], joint_name)
