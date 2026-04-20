@@ -21,7 +21,7 @@ def _package_root() -> Path:
 
 
 def _g1_scene_template() -> Path:
-    return _package_root() / "models" / "g1" / "g1_29dof_spherehand.xml"
+    return _package_root() / "models" / "g1" / "g1_29dof.xml"
 
 
 def _heightfield_to_obj_mesh(
@@ -112,11 +112,7 @@ def _write_scene_xml(
     object_name: str,
 ) -> Path:
     content = template_xml_path.read_text()
-    asset_block = "\n".join(
-        [
-            f'    <mesh name="{object_name}_mesh" file="{asset_xml_path.parent / (object_name + ".obj")}" scale="1 1 1"/>',
-        ]
-    )
+    asset_block = f'  <include file="{asset_xml_path.name}"/>'
     geom_block = "\n".join(
         [
             f'    <body name="{object_name}" pos="0 0 0">',
@@ -124,7 +120,7 @@ def _write_scene_xml(
             "    </body>",
         ]
     )
-    content = content.replace("</asset>", f"{asset_block}\n  </asset>", 1)
+    content = content.replace("</asset>", f"{asset_block}\n</asset>", 1)
     content = content.replace("</worldbody>", f"{geom_block}\n  </worldbody>", 1)
     scene_xml_path.write_text(content)
     return scene_xml_path
@@ -163,7 +159,7 @@ def export_parc_scene(
 
     obj_path = out_dir / f"{object_name}.obj"
     asset_xml_path = out_dir / "box_assets.xml"
-    scene_xml_path = out_dir / "g1_29dof_spherehand_w_multi_boxes.xml"
+    scene_xml_path = out_dir / "g1_29dof_w_multi_boxes.xml"
     urdf_path = out_dir / f"{object_name}.urdf"
 
     _write_obj(terrain_data.hf, float(terrain_data.min_point[0]), float(terrain_data.min_point[1]), float(terrain_data.dx), obj_path)

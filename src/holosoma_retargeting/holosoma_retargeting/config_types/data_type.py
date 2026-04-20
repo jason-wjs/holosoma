@@ -173,6 +173,24 @@ SMPLX_DEMO_JOINTS = [
     "R_Wrist",
 ]
 
+PARC_HUMANOID_DEMO_JOINTS = [
+    "pelvis",
+    "torso",
+    "head",
+    "right_upper_arm",
+    "right_lower_arm",
+    "right_hand",
+    "left_upper_arm",
+    "left_lower_arm",
+    "left_hand",
+    "right_thigh",
+    "right_shin",
+    "right_foot",
+    "left_thigh",
+    "left_shin",
+    "left_foot",
+]
+
 # Joint mappings - organized by (data_format, robot_type)
 JOINTS_MAPPINGS = {
     ("lafan", "g1"): {
@@ -294,6 +312,21 @@ JOINTS_MAPPINGS = {
         "LeftFoot": "Ankle_Cross_Left",
         "RightFoot": "Ankle_Cross_Right",
     },
+    ("parc_humanoid", "g1"): {
+        "pelvis": "pelvis_contour_link",
+        "left_thigh": "left_hip_pitch_link",
+        "right_thigh": "right_hip_pitch_link",
+        "left_shin": "left_knee_link",
+        "right_shin": "right_knee_link",
+        "left_upper_arm": "left_shoulder_roll_link",
+        "right_upper_arm": "right_shoulder_roll_link",
+        "left_lower_arm": "left_elbow_link",
+        "right_lower_arm": "right_elbow_link",
+        "left_foot": "left_ankle_intermediate_1_link",
+        "right_foot": "right_ankle_intermediate_1_link",
+        "left_hand": "left_rubber_hand_link",
+        "right_hand": "right_rubber_hand_link",
+    },
 }
 
 # Data format specific constants
@@ -302,6 +335,7 @@ TOE_NAMES_BY_FORMAT = {
     "smplh": ["L_Toe", "R_Toe"],
     "mocap": ["LeftToeBase", "RightToeBase"],
     "smplx": ["L_Foot", "R_Foot"],
+    "parc_humanoid": ["left_foot", "right_foot"],
 }
 
 
@@ -318,6 +352,9 @@ DATA_FORMAT_CONSTANTS: dict[str, FormatConstants] = {
     "mocap": {
         "default_human_height": 1.78,
     },
+    "parc_humanoid": {
+        "default_human_height": 1.78,
+    },
 }
 
 # Unified registry: Maps format name to demo joints
@@ -328,6 +365,7 @@ DEMO_JOINTS_REGISTRY: dict[str, list[str]] = {
     "smplh": SMPLH_DEMO_JOINTS,
     "mocap": MOCAP_DEMO_JOINTS,
     "smplx": SMPLX_DEMO_JOINTS,
+    "parc_humanoid": PARC_HUMANOID_DEMO_JOINTS,
 }
 
 # Type alias for data formats - use str to allow dynamic data formats via DEMO_JOINTS_REGISTRY
