@@ -419,7 +419,12 @@ def _compute_q_init_base(
         _, human_quat_init = transform_from_human_to_world(
             human_joints[0, 0, :], object_poses[0], np.array([0.0, 0.0, 0.0])
         )
-        spine_joint_idx = retargeter.demo_joints.index("Spine1")
+        if "Spine1" in retargeter.demo_joints:
+            spine_joint_idx = retargeter.demo_joints.index("Spine1")
+        elif "torso" in retargeter.demo_joints:
+            spine_joint_idx = retargeter.demo_joints.index("torso")
+        else:
+            spine_joint_idx = 0
         # MuJoCo order: pos first, then quat
         q_init_base = np.concatenate(
             [

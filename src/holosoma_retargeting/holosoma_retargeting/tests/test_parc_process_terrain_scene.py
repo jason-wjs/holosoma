@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import mujoco
+
 from holosoma_retargeting.parc_process.source_io import load_parc_sample
 from holosoma_retargeting.parc_process.terrain_scene import export_parc_scene
 
@@ -14,3 +16,5 @@ def test_export_parc_scene_writes_obj_and_xml(tmp_path: Path) -> None:
     assert scene.obj_path.exists()
     assert scene.scene_xml_path.exists()
     assert scene.asset_xml_path.exists()
+    model = mujoco.MjModel.from_xml_path(str(scene.scene_xml_path))
+    assert model.nbody > 0

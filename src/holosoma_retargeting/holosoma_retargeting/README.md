@@ -4,6 +4,38 @@ This repository provides tools for retargeting human motion data to humanoid rob
 
 **Data Requirements**: The retargeting pipeline requires motion data in world joint positions. For custom data, you need to prepare world joint positions in shape `(T, J, 3)` where T is the number of frames and J is the number of joints, and modify `demo_joints` and `joints_mapping` defined in `config_types/data_type.py`.
 
+## PARC Bootstrap To G1 Paired Data
+
+The `examples/parc_process.py` entrypoint compiles PARC `initial_aug` terrain-motion pairs into G1 paired dataset artifacts. It:
+
+1. reads a PARC `.pkl` sample
+2. reconstructs source world joints from `humanoid.xml`
+3. exports terrain assets and a climbing workspace for retargeting
+4. runs holosoma retargeting on the generated workspace
+5. writes a PARC-style paired `.pkl` plus `motions.yaml`
+
+Single sample:
+
+```bash
+python examples/parc_process.py \
+  --sample /path/to/platform_001.pkl \
+  --source-xml /path/to/humanoid.xml \
+  --output-root /tmp/parc_process_bootstrap \
+  --retarget-save-dir /tmp/parc_process_workspace
+```
+
+Manifest mode:
+
+```bash
+python examples/parc_process.py \
+  --manifest /path/to/samples.yaml \
+  --source-xml /path/to/humanoid.xml \
+  --output-root /tmp/parc_process_bootstrap \
+  --retarget-save-dir /tmp/parc_process_workspace
+```
+
+Use `--dry-run` to stop after workspace generation without running retargeting.
+
 ## Single Sequence Motion Retargeting
 
 ```bash

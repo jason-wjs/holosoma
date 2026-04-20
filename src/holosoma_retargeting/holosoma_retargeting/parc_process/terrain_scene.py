@@ -94,9 +94,7 @@ def _write_asset_xml(obj_path: Path, asset_xml_path: Path, object_name: str) -> 
         "\n".join(
             [
                 "<mujocoinclude>",
-                "  <asset>",
                 f'    <mesh name="{object_name}_mesh" file="{obj_path}" scale="1 1 1"/>',
-                "  </asset>",
                 "</mujocoinclude>",
                 "",
             ]
@@ -112,6 +110,8 @@ def _write_scene_xml(
     object_name: str,
 ) -> Path:
     content = template_xml_path.read_text()
+    meshdir = (_package_root() / "models" / "g1" / "assets").as_posix()
+    content = content.replace('meshdir="assets/"', f'meshdir="{meshdir}"', 1)
     asset_block = f'  <include file="{asset_xml_path.name}"/>'
     geom_block = "\n".join(
         [
