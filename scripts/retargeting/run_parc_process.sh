@@ -7,20 +7,20 @@ source "${REPO_ROOT}/scripts/source_retargeting_setup.sh"
 cd "${REPO_ROOT}/src/holosoma_retargeting/holosoma_retargeting"
 
 ## platform_001
-python examples/parc_process.py \
-  --sample /home/humanoid/Projects/Junsong_WU/learning/locomotion/PARC/data/releases_parc/dec_release/initial_aug/platform/platform_001.pkl \
-  --source-xml /home/humanoid/Projects/Junsong_WU/learning/locomotion/PARC/data/assets/humanoid.xml \
-  --output-root /tmp/parc_process_bootstrap \
-  --retarget-save-dir /tmp/parc_process_workspace \
-  "$@"
-
-## mid_blocks_004_dm
 # python examples/parc_process.py \
-#   --sample /home/humanoid/Projects/Junsong_WU/learning/locomotion/PARC/data/releases_parc/dec_release/initial_aug/mid_climbing/mid_blocks_004_dm.pkl \
+#   --sample /home/humanoid/Projects/Junsong_WU/learning/locomotion/PARC/data/releases_parc/dec_release/initial_aug/platform/platform_001.pkl \
 #   --source-xml /home/humanoid/Projects/Junsong_WU/learning/locomotion/PARC/data/assets/humanoid.xml \
 #   --output-root /tmp/parc_process_bootstrap \
 #   --retarget-save-dir /tmp/parc_process_workspace \
 #   "$@"
+
+## mid_blocks_004_dm
+python examples/parc_process.py \
+  --sample /home/humanoid/Projects/Junsong_WU/learning/locomotion/PARC/data/releases_parc/dec_release/initial_aug/mid_climbing/mid_blocks_004_dm.pkl \
+  --source-xml /home/humanoid/Projects/Junsong_WU/learning/locomotion/PARC/data/assets/humanoid.xml \
+  --output-root /tmp/parc_process_bootstrap \
+  --retarget-save-dir /tmp/parc_process_workspace \
+  "$@"
 
 ## beyond_platform_002
 # python examples/parc_process.py \
