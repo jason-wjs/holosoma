@@ -94,6 +94,9 @@ def _misc_payload(
     motion_name: str,
     scale_factor: float,
     workspace_path: str | Path | None,
+    terrain_collision_path: str | Path | None,
+    terrain_hf_path: str | Path | None,
+    terrain_visual_path: str | Path | None,
     retarget_config: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
     misc_data = dict(source_sample.misc_data or {})
@@ -102,6 +105,12 @@ def _misc_payload(
     misc_data["parc_process:scale_factor"] = float(scale_factor)
     if workspace_path is not None:
         misc_data["parc_process:workspace_path"] = str(Path(workspace_path).expanduser().resolve())
+    if terrain_collision_path is not None:
+        misc_data["parc_process:terrain_collision_file"] = str(Path(terrain_collision_path).expanduser().resolve())
+    if terrain_hf_path is not None:
+        misc_data["parc_process:terrain_hf_file"] = str(Path(terrain_hf_path).expanduser().resolve())
+    if terrain_visual_path is not None:
+        misc_data["parc_process:terrain_visual_file"] = str(Path(terrain_visual_path).expanduser().resolve())
     if source_sample.motion_data.body_contacts is not None:
         misc_data["parc_process:source_body_contacts"] = np.asarray(source_sample.motion_data.body_contacts).copy()
     if retarget_config is not None:
@@ -146,6 +155,9 @@ def write_paired_output(
     motion_name: str,
     scale_factor: float = 1.0,
     workspace_path: str | Path | None = None,
+    terrain_collision_path: str | Path | None = None,
+    terrain_hf_path: str | Path | None = None,
+    terrain_visual_path: str | Path | None = None,
     retarget_config: Mapping[str, Any] | None = None,
     weight: float = 1.0,
 ) -> PairedOutputResult:
@@ -163,6 +175,9 @@ def write_paired_output(
             motion_name=motion_name,
             scale_factor=scale_factor,
             workspace_path=workspace_path,
+            terrain_collision_path=terrain_collision_path,
+            terrain_hf_path=terrain_hf_path,
+            terrain_visual_path=terrain_visual_path,
             retarget_config=retarget_config,
         ),
         motion_file=motion_file,

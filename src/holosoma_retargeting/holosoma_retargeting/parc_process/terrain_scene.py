@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -14,6 +16,8 @@ class ParcSceneAssets:
     asset_xml_path: Path
     scene_xml_path: Path
     urdf_path: Path
+    terrain_hf_path: Path
+    terrain_collision_path: Path
 
 
 def _package_root() -> Path:
@@ -78,14 +82,55 @@ def _write_obj(
     min_y: float,
     dx: float,
     output_path: Path,
+    *,
+    base_z: float,
 ) -> Path:
-    base_z = float(np.min(hf)) - max(float(dx), 0.1)
     vertices, faces = _heightfield_to_obj_mesh(hf, min_x, min_y, dx, base_z=base_z)
     with output_path.open("w") as f:
         for x, y, z in vertices:
             f.write(f"v {x:.8f} {y:.8f} {z:.8f}\n")
         for i, j, k in faces:
             f.write(f"f {i} {j} {k}\n")
+    return output_path
+
+
+def _write_terrain_hf(hf: np.ndarray, output_path: Path) -> Path:
+    np.save(output_path, np.asarray(hf, dtype=np.float32))
+    return output_path
+
+
+def _write_terrain_collision_manifest(
+    *,
+    output_path: Path,
+    object_name: str,
+    hf_path: Path,
+    obj_path: Path,
+    terrain_data: ParcTerrainData,
+    base_z: float,
+    scale_factor: float,
+    scale_source: dict[str, Any] | None = None,
+) -> Path:
+    payload = {
+        "schema_version": 1,
+        "terrain_name": object_name,
+        "frame": {"convention": "z_up", "origin": "motion_world"},
+        "collision": {
+            "type": "heightfield",
+            "hf_file": hf_path.name,
+            "min_point": [float(terrain_data.min_point[0]), float(terrain_data.min_point[1])],
+            "dx": float(terrain_data.dx),
+            "base_z": float(base_z * scale_factor),
+            "xy_scale": float(scale_factor),
+            "height_scale": float(scale_factor),
+        },
+        "visual": {"file": obj_path.name, "role": "visual_only"},
+        "source": {
+            "format": "PARC",
+            "fields": ["terrain_data.hf", "terrain_data.min_point", "terrain_data.dx"],
+            "scale_source": scale_source or {},
+        },
+    }
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return output_path
 
 
@@ -153,6 +198,8 @@ def export_parc_scene(
     output_dir: str | Path,
     *,
     object_name: str = "multi_boxes",
+    scale_factor: float = 1.0,
+    scale_source: dict[str, Any] | None = None,
 ) -> ParcSceneAssets:
     out_dir = Path(output_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -161,8 +208,29 @@ def export_parc_scene(
     asset_xml_path = out_dir / "box_assets.xml"
     scene_xml_path = out_dir / "g1_29dof_w_multi_boxes.xml"
     urdf_path = out_dir / f"{object_name}.urdf"
+    terrain_hf_path = out_dir / "terrain_hf.npy"
+    terrain_collision_path = out_dir / "terrain_collision.json"
 
-    _write_obj(terrain_data.hf, float(terrain_data.min_point[0]), float(terrain_data.min_point[1]), float(terrain_data.dx), obj_path)
+    base_z = float(np.min(terrain_data.hf)) - max(float(terrain_data.dx), 0.1)
+    _write_obj(
+        terrain_data.hf,
+        float(terrain_data.min_point[0]),
+        float(terrain_data.min_point[1]),
+        float(terrain_data.dx),
+        obj_path,
+        base_z=base_z,
+    )
+    _write_terrain_hf(terrain_data.hf, terrain_hf_path)
+    _write_terrain_collision_manifest(
+        output_path=terrain_collision_path,
+        object_name=object_name,
+        hf_path=terrain_hf_path,
+        obj_path=obj_path,
+        terrain_data=terrain_data,
+        base_z=base_z,
+        scale_factor=scale_factor,
+        scale_source=scale_source,
+    )
     _write_asset_xml(obj_path, asset_xml_path, object_name)
     _write_scene_xml(_g1_scene_template(), asset_xml_path, scene_xml_path, object_name)
     _write_object_urdf(obj_path, urdf_path, object_name)
@@ -172,4 +240,6 @@ def export_parc_scene(
         asset_xml_path=asset_xml_path,
         scene_xml_path=scene_xml_path,
         urdf_path=urdf_path,
+        terrain_hf_path=terrain_hf_path,
+        terrain_collision_path=terrain_collision_path,
     )

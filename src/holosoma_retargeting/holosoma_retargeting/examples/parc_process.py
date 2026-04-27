@@ -101,14 +101,32 @@ def _resolve_samples(args: argparse.Namespace) -> list[Path]:
     raise ValueError("Either --sample or --manifest must be provided.")
 
 
-def _default_scale_factor(robot_type: str, data_format: str = "parc_humanoid") -> float:
+def _default_scale_factor_with_source(
+    robot_type: str,
+    data_format: str = "parc_humanoid",
+) -> tuple[float, dict[str, float | str]]:
     robot_cfg = RobotConfig(robot_type=robot_type)
     motion_cfg = MotionDataConfig(data_format=data_format, robot_type=robot_type)
     if motion_cfg.default_scale_factor is not None:
-        return float(motion_cfg.default_scale_factor)
+        return float(motion_cfg.default_scale_factor), {
+            "robot_type": robot_type,
+            "data_format": data_format,
+            "default_scale_factor": float(motion_cfg.default_scale_factor),
+            "rule": "MotionDataConfig.default_scale_factor",
+        }
     if motion_cfg.default_human_height is not None:
-        return float(robot_cfg.ROBOT_HEIGHT / motion_cfg.default_human_height)
-    return 1.0
+        return float(robot_cfg.ROBOT_HEIGHT / motion_cfg.default_human_height), {
+            "robot_type": robot_type,
+            "robot_height": float(robot_cfg.ROBOT_HEIGHT),
+            "data_format": data_format,
+            "default_human_height": float(motion_cfg.default_human_height),
+            "rule": "RobotConfig.ROBOT_HEIGHT / MotionDataConfig.default_human_height",
+        }
+    return 1.0, {
+        "robot_type": robot_type,
+        "data_format": data_format,
+        "rule": "identity fallback",
+    }
 
 
 def _retarget_output_path(retarget_dir: Path, task_name: str) -> Path:
@@ -152,11 +170,14 @@ def compile_sample(
 
     workspace_root = retarget_save_dir / "workspace"
     retarget_dir = retarget_save_dir / "retargeted"
+    scale_factor, scale_source = _default_scale_factor_with_source(robot_type)
     workspace = build_parc_workspace(
         sample=source_sample,
         source_xml=source_xml,
         output_dir=workspace_root,
         task_name=task_name,
+        scale_factor=scale_factor,
+        scale_source=scale_source,
     )
 
     if dry_run:
@@ -185,8 +206,11 @@ def compile_sample(
         source_sample=source_sample,
         output_root=output_root,
         motion_name=f"{task_name}_{robot_type}",
-        scale_factor=_default_scale_factor(robot_type),
+        scale_factor=scale_factor,
         workspace_path=workspace.task_dir,
+        terrain_collision_path=workspace.terrain_collision_path,
+        terrain_hf_path=workspace.terrain_hf_path,
+        terrain_visual_path=workspace.obj_path,
         retarget_config={
             "robot": robot_type,
             "task_type": "climbing",

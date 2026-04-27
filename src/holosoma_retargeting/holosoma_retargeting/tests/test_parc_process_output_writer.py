@@ -24,6 +24,9 @@ def test_write_paired_output_emits_manifest_and_motion(tmp_path: Path) -> None:
         motion_name="platform_001_g1",
         scale_factor=0.91,
         workspace_path=tmp_path / "workspace",
+        terrain_collision_path=tmp_path / "workspace" / "terrain_collision.json",
+        terrain_hf_path=tmp_path / "workspace" / "terrain_hf.npy",
+        terrain_visual_path=tmp_path / "workspace" / "multi_boxes.obj",
         retarget_config={"robot": "g1", "task_type": "climbing"},
     )
 
@@ -39,6 +42,9 @@ def test_write_paired_output_emits_manifest_and_motion(tmp_path: Path) -> None:
     assert motion_data.terrain_data.hf.shape == sample.terrain_data.hf.shape
     assert motion_data.misc_data["parc_process:source_sample"] == str(sample.path)
     assert motion_data.misc_data["parc_process:scale_factor"] == 0.91
+    assert motion_data.misc_data["parc_process:terrain_collision_file"].endswith("terrain_collision.json")
+    assert motion_data.misc_data["parc_process:terrain_hf_file"].endswith("terrain_hf.npy")
+    assert motion_data.misc_data["parc_process:terrain_visual_file"].endswith("multi_boxes.obj")
 
     manifest = yaml.safe_load(result.manifest_file.read_text())
     assert manifest["motions"] == [
