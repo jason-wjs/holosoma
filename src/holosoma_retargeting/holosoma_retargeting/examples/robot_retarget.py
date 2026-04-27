@@ -263,11 +263,21 @@ def load_motion_data(
 
     elif task_type == "climbing":
         task_dir = data_path / task_name
-        npy_files = list(task_dir.glob("*.npy"))
-        if not npy_files:
+        preferred_npy = task_dir / "human_joints.npy"
+        npy_files = sorted(task_dir.glob("*.npy"))
+        if preferred_npy.exists():
+            npy_file = preferred_npy
+        elif len(npy_files) == 1:
+            npy_file = npy_files[0]
+        elif not npy_files:
             raise FileNotFoundError(f"No .npy file found in {task_dir}")
+        else:
+            candidates = ", ".join(path.name for path in npy_files)
+            raise ValueError(
+                f"Multiple .npy files found in {task_dir}; expected human_joints.npy. "
+                f"Candidates: {candidates}"
+            )
 
-        npy_file = npy_files[0]
         human_joints = np.load(str(npy_file))
         if data_format == "mocap":
             human_joints = human_joints[::4]

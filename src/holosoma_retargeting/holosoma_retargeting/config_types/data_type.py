@@ -353,7 +353,9 @@ DATA_FORMAT_CONSTANTS: dict[str, FormatConstants] = {
         "default_human_height": 1.78,
     },
     "parc_humanoid": {
-        "default_human_height": 1.78,
+        # PARC uses /home/humanoid/Projects/Junsong_WU/learning/locomotion/PARC/data/assets/humanoid.xml,
+        # whose humanoid asset height is approximately 1.62 m.
+        "default_human_height": 1.62,
     },
 }
 

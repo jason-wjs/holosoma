@@ -35,6 +35,8 @@ def test_build_parc_workspace_creates_retarget_inputs(tmp_path: Path) -> None:
     assert workspace.object_dir.exists()
     assert workspace.scene_xml_path.exists()
     assert workspace.scene_xml_path.name == "g1_29dof_w_multi_boxes.xml"
+    assert workspace.terrain_hf_path.exists()
+    assert workspace.terrain_collision_path.exists()
 
     human_joints = np.load(workspace.joints_file)
     assert human_joints.shape == (sample.motion_data.root_pos.shape[0], 15, 3)

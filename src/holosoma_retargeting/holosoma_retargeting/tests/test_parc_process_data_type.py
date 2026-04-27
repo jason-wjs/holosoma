@@ -7,3 +7,4 @@ def test_parc_humanoid_format_is_registered_for_g1() -> None:
     assert "pelvis" in cfg.resolved_demo_joints
     assert cfg.resolved_joints_mapping["left_foot"]
     assert cfg.toe_names == ["left_foot", "right_foot"]
+    assert cfg.default_human_height == 1.62
