@@ -254,6 +254,18 @@ def _result_to_dict(result: ParcProcessResult) -> dict[str, Any]:
         "sample": str(result.sample),
         "task_name": result.task_name,
         "workspace": str(result.workspace.task_dir),
+        "workspace_assets": {
+            "human_joints": str(result.workspace.joints_file),
+            "multi_boxes_obj": str(result.workspace.obj_path),
+            "box_assets_xml": str(result.workspace.asset_xml_path),
+            "scene_xml": str(result.workspace.scene_xml_path),
+            "multi_boxes_urdf": str(result.workspace.urdf_path),
+        },
+        "terrain_collision_assets": {
+            "terrain_hf": str(result.workspace.terrain_hf_path),
+            "terrain_collision": str(result.workspace.terrain_collision_path),
+            "terrain_visual": str(result.workspace.obj_path),
+        },
     }
     if result.retarget_npz is not None:
         payload["retarget_npz"] = str(result.retarget_npz)
